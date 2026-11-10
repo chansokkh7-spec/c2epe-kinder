@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C2-EPE Digital Academy - Kindergarten K1 Learning Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Confetti Library for Celebrations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=Poppins:wght@400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; }
+        .fun-font { font-family: 'Comic Neue', cursive; }
+        button:disabled { opacity: .6; cursor: default; }
+        /* phones: the lesson fills the screen, so jumping to it always shows it from the top */
+        @media (max-width: 767px) { #content-area { min-height: calc(100vh - 24px); padding-bottom: 76px; } }
+            video::cue { font-size: 1.15em; font-weight: 600; background: rgba(0,0,0,0.72); color: #fff; }
+    </style>
+</head>
+<body class="bg-amber-50 min-h-screen flex flex-col items-center p-4">
+
+    <!-- Header Section -->
+    <header class="w-full max-w-5xl bg-blue-600 text-white rounded-2xl p-6 shadow-lg mb-6 flex justify-between items-center flex-wrap gap-3">
+        <div>
+            <h1 class="text-2xl md:text-3xl fun-font tracking-wider">🌟 C2-EPE Digital Academy</h1>
+            <p class="text-sm text-blue-100">Interactive Kindergarten Curriculum (K0 - K3)</p>
+        </div>
+        <div class="flex items-center gap-3 flex-wrap justify-end">
+            <div class="bg-amber-400 text-blue-900 px-3 py-2 rounded-xl text-sm font-bold shadow flex items-center gap-1">
+                ⭐ <span id="star-count">0</span>
+            </div>
+            <div class="bg-pink-500 text-white px-3 py-2 rounded-xl text-sm font-bold shadow flex items-center gap-1">
+                🏆 <span id="badge-count">0</span> Badges
+            </div>
+            <div class="bg-blue-500 px-3 py-2 rounded-xl text-sm font-bold border border-blue-400">
+                <span id="current-level-display">K1</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-4 gap-6">
+        
+        <!-- Sidebar Navigation -->
+        <aside id="module-sidebar" class="bg-white rounded-2xl p-4 shadow-md md:col-span-1 flex flex-col gap-3" style="scroll-margin-top:12px;">
+            <!-- Hidden entirely when opened with a ?level= URL param (see
+                 the Hub-integration script at the bottom) so each Hub card
+                 for K0/K1/K2/K3 feels like its own dedicated page instead
+                 of a shared app a student could switch away from. -->
+            <div id="level-picker-wrap">
+                <h2 class="font-bold text-gray-700 border-b pb-2">Kindergarten Levels</h2>
+                <div class="flex flex-col gap-3 mt-3">
+                    <button onclick="selectLevel('K0')" id="btn-K0" class="level-btn text-left p-3 rounded-xl bg-gray-100 hover:bg-amber-100 font-semibold transition cursor-pointer">🧸 K0 (Starter)</button>
+                    <button onclick="selectLevel('K1')" id="btn-K1" class="level-btn text-left p-3 rounded-xl bg-blue-600 text-white font-semibold transition shadow cursor-pointer">🚀 K1 (Level 1)</button>
+                    <button onclick="selectLevel('K2')" id="btn-K2" class="level-btn text-left p-3 rounded-xl bg-gray-100 hover:bg-amber-100 font-semibold transition cursor-pointer">🎨 K2 (Level 2)</button>
+                    <button onclick="selectLevel('K3')" id="btn-K3" class="level-btn text-left p-3 rounded-xl bg-gray-100 hover:bg-amber-100 font-semibold transition cursor-pointer">🏆 K3 (Level 3)</button>
+                </div>
+            </div>
+            <div id="locked-level-banner" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
+                <p class="text-xs text-blue-500 font-semibold">LEVEL</p>
+                <p id="locked-level-text" class="text-xl font-bold text-blue-800"></p>
+            </div>
+
+
+            <hr class="my-2">
+            <h2 class="font-bold text-gray-700" id="unit-select-label">Select Unit (1 to 16)</h2>
+            <select id="unit-select" onchange="updateUnit()" class="p-2 rounded-xl border border-gray-300 bg-gray-50 font-semibold text-blue-800">
+                <option value="1">Unit 1: Hello!</option>
+            </select>
+
+            <hr class="my-2">
+            <h2 class="font-bold text-gray-700">Learning Modules</h2>
+            <button onclick="switchTab('video')" data-tab="video" id="video-tab-btn" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer">📹 0. Video Lesson</button>
+            <button onclick="switchTab('listening')" data-tab="listening" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer">🔊 1. Listening</button>
+            <button onclick="switchTab('speaking')" data-tab="speaking" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer">🗣️ 2. Speaking</button>
+            <button onclick="switchTab('reading')" data-tab="reading" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer">📖 3. Reading</button>
+            <button onclick="switchTab('writing')" data-tab="writing" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer">✍️ 4. Writing (Trace)</button>
+            <button onclick="switchTab('matching')" data-tab="matching" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer">🎮 5. Vocab Game</button>
+            <button onclick="switchTab('coloring')" data-tab="coloring" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer">🎨 6. Fun Coloring</button>
+            <button onclick="switchTab('quiz')" data-tab="quiz" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer">🧩 7. Quiz & Rewards</button>
+            <button onclick="switchTab('grammar')" data-tab="grammar" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer">📐 8. Grammar Box</button>
+            <!-- Phonics only makes sense for very early readers, so it's
+                 shown/hidden per level by selectLevel() rather than being a
+                 fixed tab like the others. -->
+            <button onclick="switchTab('phonics')" id="phonics-tab-btn" data-tab="phonics" class="tab-btn text-left p-2 rounded-lg hover:bg-gray-100 font-medium text-sm cursor-pointer" style="display:none;">🔤 9. ABC Phonics</button>
+        </aside>
+
+        <!-- Content Area -->
+        <section id="content-area" class="bg-white rounded-2xl p-6 shadow-md md:col-span-3 flex flex-col justify-between" style="scroll-margin-top:12px;">
+            
+            <div id="module-content">
+                <!-- Dynamic Content Loaded via JS -->
+            </div>
+
+            <!-- Footer Navigation -->
+            <div class="mt-8 pt-4 border-t flex justify-between items-center text-sm text-gray-500 gap-2 flex-wrap">
+                <span id="platform-info">C2-EPE Digital Platform - K1 (Unit 1)</span>
+                <div class="flex gap-2">
+                    <button onclick="completeActivity()" id="finish-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer transition">Finish Activity (+5 ⭐)</button>
+                    <button id="footer-next-module" onclick="switchTab('listening')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer transition" style="display:none;">🔊 Next: Listening ▶️</button>
+                    <button id="footer-next-lesson" onclick="nextLesson()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer transition">Next Lesson ▶️</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Phones only: jump back up to the list of learning modules -->
+    <button id="modules-jump" onclick="jumpToModules()"
+        class="md:hidden fixed bottom-4 right-4 z-50 bg-blue-600 text-white font-bold px-4 py-3 rounded-full shadow-lg cursor-pointer"
+        style="display:none;" aria-label="Back to learning modules">📚 Modules</button>
+    <!-- JavaScript Comprehensive Engine -->
+    <script>
+        let state = {
+            level: 'K0',
+            unit: 1,
+            tab: 'listening',
+            stars: 0,
+            badges: 0
+        };
+
+        const realCurriculum = {
+            'K0': {
+                1: { title: "Hello!", vocab: ["Hello", "Hi", "Goodbye", "Name", "Bye-bye", "Please", "Thank you", "Sorry"], story: "Hello! My name is baby bear. Let's learn together. Please say hello and thank you.", question: "What do you say when you meet someone?", grammar: { point: "I am / I'm", example: "I am happy. I'm Anna." }, value: "Kindness" },
+                2: { title: "My Classroom", vocab: ["Door", "Window", "Chair", "Table", "Floor", "Wall", "Board", "Bag"], story: "Look at the big classroom and the clean table. The board is on the wall.", question: "Where do we sit in class?", grammar: { point: "This is my...", example: "This is my chair. This is my bag." }, value: "Sharing" },
+                3: { title: "My Family", vocab: ["Mummy", "Daddy", "Brother", "Sister", "Baby", "Grandma", "Grandpa", "Family"], story: "I love my mummy and daddy so much. My whole family is happy together.", question: "Who is in your family?", grammar: { point: "This is my (family)", example: "This is my mummy. This is my daddy." }, value: "Politeness" },
+                4: { title: "Colors", vocab: ["Red", "Blue", "Yellow", "Green", "Orange", "Purple", "Pink", "White"], story: "The ball is red and the sky is blue. My dress is pink and white.", question: "What color is the sky?", grammar: { point: "It is (color)", example: "It is red. It is blue." }, value: "Honesty" },
+                5: { title: "My Toys", vocab: ["Doll", "Ball", "Car", "Teddy", "Blocks", "Kite", "Drum", "Robot"], story: "I have a red ball and a soft teddy bear. I like to fly my kite too.", question: "What toy do you like?", grammar: { point: "I have a...", example: "I have a ball. I have a car." }, value: "Patience" },
+                6: { title: "Animals", vocab: ["Cat", "Dog", "Bird", "Fish", "Duck", "Cow", "Pig", "Frog"], story: "The cute little cat drinks fresh milk. The duck swims with the fish.", question: "What animal can swim?", grammar: { point: "I like the...", example: "I like the cat. I like the dog." }, value: "Respect" },
+                7: { title: "My Face", vocab: ["Eyes", "Ears", "Nose", "Mouth", "Hair", "Head", "Cheek", "Teeth"], story: "I use my eyes to see the beautiful world. I brush my teeth every day.", question: "How many eyes do you have?", grammar: { point: "I have two...", example: "I have two eyes. I have two ears." }, value: "Gratitude" },
+                8: { title: "Action Time", vocab: ["Run", "Jump", "Walk", "Stop", "Sit", "Stand", "Clap", "Sleep"], story: "Let's run fast and jump high in the yard. Then sit down and clap your hands.", question: "What can you do with your legs?", grammar: { point: "I can...", example: "I can run. I can jump." }, value: "Teamwork" },
+                // Title/grammar now say 1-6 so they match the vocabulary (which includes "Six")
+                9: { title: "Numbers 1-6", vocab: ["One", "Two", "Three", "Four", "Five", "Six", "Count", "Number"], story: "Let's count together: one, two, three, four, five! Can you say the number six?", question: "Can you count to six?", grammar: { point: "Counting 1-6", example: "One, two, three, four, five, six." }, value: "Responsibility" },
+                10: { title: "My Body", vocab: ["Hand", "Foot", "Arm", "Leg", "Finger", "Tummy", "Knee", "Shoulder"], story: "I have two hands and two feet. I can move my arms and legs.", question: "How many fingers do you have?", grammar: { point: "I have two hands", example: "I have two hands. I have two feet." }, value: "Courage" },
+                11: { title: "Weather", vocab: ["Sun", "Rain", "Cloud", "Wind", "Hot", "Cold", "Umbrella", "Rainbow"], story: "The sun is hot and the rain is cold. After the rain, we see a pretty rainbow.", question: "What do you use when it rains?", grammar: { point: "It is hot / cold", example: "It is hot. It is cold." }, value: "Friendship" },
+                12: { title: "Fruits", vocab: ["Apple", "Banana", "Orange", "Grape", "Mango", "Watermelon", "Sweet", "Juice"], story: "I like sweet apples and juicy mangoes. Watermelon is my favorite fruit.", question: "What is your favorite fruit?", grammar: { point: "I like...", example: "I like apples. I like mangoes." }, value: "Helping Others" },
+                13: { title: "My Clothes", vocab: ["Shirt", "Shorts", "Shoes", "Socks", "Hat", "Dress", "Cap", "Jacket"], story: "I wear my shirt and shorts to play. I put on my shoes and socks first.", question: "What do you wear on your feet?", grammar: { point: "I wear a...", example: "I wear a hat. I wear shoes." }, value: "Cleanliness" },
+                14: { title: "Playtime", vocab: ["Slide", "Swing", "Ball", "Run", "Jump", "Sing", "Dance", "Play"], story: "Let's play on the slide and swing. We can sing and dance together too.", question: "What games do you like to play?", grammar: { point: "Let's...", example: "Let's play. Let's sing." }, value: "Perseverance" },
+                15: { title: "Bedtime", vocab: ["Bed", "Pillow", "Blanket", "Sleep", "Dream", "Night", "Moon", "Star"], story: "At night, I go to my bed with my soft pillow and warm blanket to sleep.", question: "What do you see in the sky at night?", grammar: { point: "I see the...", example: "I see the moon. I see a star." }, value: "Empathy" },
+                16: { title: "Good Manners", vocab: ["Please", "Thank you", "Sorry", "Excuse me", "Share", "Help", "Kind", "Smile"], story: "Always say please and thank you. Be kind, share your toys, and smile at your friends.", question: "What do you say when someone helps you?", grammar: { point: "Please / Thank you", example: "Please help me. Thank you!" }, value: "Confidence" }
+            },
+            'K1': {
+                1: { title: "Hello!", vocab: ["Hello", "Hi", "Teacher", "Friend", "Good morning", "Name", "Class", "School"], story: "Hello! My name is Anna. This is my new school. Good morning, teacher and friends!", question: "What is your teacher's name?", grammar: { point: "My name is...", example: "My name is Anna. What is your name?" }, value: "Kindness" },
+                2: { title: "School Things", vocab: ["Book", "Pen", "Eraser", "Crayon", "Ruler", "Bag", "Pencil case", "Scissors"], story: "I have a yellow pencil and a pink eraser in my bag. My ruler is in my pencil case.", question: "What do you write with?", grammar: { point: "This is a / an...", example: "This is a pencil. This is an eraser." }, value: "Sharing" },
+                3: { title: "My Family & Friends", vocab: ["Mother", "Father", "Grandma", "Grandpa", "Uncle", "Aunt", "Cousin", "Friend"], story: "Grandma tells wonderful stories every evening. My uncle and aunt visit us too.", question: "Who tells stories in your family?", grammar: { point: "This is my (family)", example: "This is my uncle. This is my aunt." }, value: "Politeness" },
+                4: { title: "Shapes & Numbers", vocab: ["Circle", "Square", "Triangle", "Star", "Rectangle", "Heart", "Oval", "Diamond"], story: "Count the shiny stars in the night sky: one, two, three. A kite is shaped like a diamond.", question: "How many sides does a triangle have?", grammar: { point: "How many...?", example: "How many stars? One, two, three." }, value: "Honesty" },
+                5: { title: "Toys & Games", vocab: ["Robot", "Blocks", "Puzzle", "Balloon", "Kite", "Top", "Yo-yo", "Marble"], story: "We build a tall tower using colorful wooden blocks. Then we fly a kite outside.", question: "What do you build with blocks?", grammar: { point: "I have a...", example: "I have a robot. I have a puzzle." }, value: "Patience" },
+                6: { title: "Pets", vocab: ["Rabbit", "Hamster", "Turtle", "Puppy", "Kitten", "Chick", "Goldfish", "Parrot"], story: "The fluffy puppy wags its tail when it is happy. My kitten likes to chase the goldfish bowl.", question: "Which pet has long ears?", grammar: { point: "It has a...", example: "It has long ears. It has a short tail." }, value: "Respect" },
+                7: { title: "Food", vocab: ["Apple", "Banana", "Milk", "Bread", "Egg", "Rice", "Cheese", "Juice"], story: "I eat a sweet banana and drink warm milk for breakfast. I also like rice with cheese.", question: "Do you like eating fruit?", grammar: { point: "I like / I don't like", example: "I like milk. I don't like coffee." }, value: "Gratitude" },
+                8: { title: "Clothes", vocab: ["Hat", "Shirt", "Pants", "Shoes", "Socks", "Jacket", "Skirt", "Gloves"], story: "Put on your red hat when you go out in the sun. Wear a jacket when it is cold.", question: "What do you wear on your feet?", grammar: { point: "I am wearing...", example: "I am wearing a hat and shoes." }, value: "Teamwork" },
+                9: { title: "Numbers 1-8", vocab: ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"], story: "Let's count our fingers: one, two, three, four, five, six, seven, eight!", question: "Can you count from one to eight?", grammar: { point: "Plural -s", example: "One book, two books, three books." }, value: "Responsibility" },
+                10: { title: "Days of the Week", vocab: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Today"], story: "We go to school on Monday. On Saturday and Sunday, we rest and play at home.", question: "What day is today?", grammar: { point: "Today is...", example: "Today is Monday. Tomorrow is Tuesday." }, value: "Courage" },
+                11: { title: "My Body", vocab: ["Head", "Shoulders", "Knees", "Toes", "Hands", "Feet", "Eyes", "Ears"], story: "Touch your head, shoulders, knees, and toes! Now clap your hands and stomp your feet.", question: "Can you touch your knees and toes?", grammar: { point: "Touch your...", example: "Touch your head. Touch your toes." }, value: "Friendship" },
+                12: { title: "In the Kitchen", vocab: ["Plate", "Spoon", "Fork", "Cup", "Pot", "Pan", "Table", "Chair"], story: "Mummy cooks rice in the pot. We put the plates, spoons, and forks on the table.", question: "What do you use to eat soup?", grammar: { point: "There is / There are", example: "There is a plate. There are two cups." }, value: "Helping Others" },
+                13: { title: "Transport", vocab: ["Car", "Bus", "Bike", "Train", "Boat", "Plane", "Road", "Fast"], story: "The yellow bus drives fast on the road. A plane flies high above the train.", question: "How do you go to school?", grammar: { point: "I go by...", example: "I go to school by bus. I go by bike." }, value: "Cleanliness" },
+                14: { title: "Sports", vocab: ["Football", "Basketball", "Swim", "Run", "Jump", "Ball", "Team", "Win"], story: "My team likes to play football and basketball. We run, jump, and try to win.", question: "What sport do you like to play?", grammar: { point: "I can play...", example: "I can play football. I can swim." }, value: "Perseverance" },
+                15: { title: "Jobs", vocab: ["Doctor", "Teacher", "Farmer", "Police", "Nurse", "Chef", "Driver", "Pilot"], story: "The doctor and nurse help sick people. The farmer grows rice for us to eat.", question: "What job would you like to have?", grammar: { point: "He / She is a...", example: "He is a doctor. She is a teacher." }, value: "Empathy" },
+                16: { title: "Nature", vocab: ["Tree", "Flower", "Grass", "Sky", "Sun", "Moon", "River", "Mountain"], story: "The tall tree and pretty flowers grow near the river. The mountain touches the sky.", question: "What grows in a garden?", grammar: { point: "It is in the...", example: "The tree is in the garden." }, value: "Confidence" }
+            },
+            'K2': {
+                1: { title: "Classroom Rules", vocab: ["Listen", "Look", "Sit down", "Stand up", "Raise hand", "Be quiet", "Line up", "Share"], story: "Please listen to the teacher and look at the board. Raise your hand before you speak.", question: "What do you do when the teacher speaks?", grammar: { point: "Please / Don't...", example: "Please listen. Don't run in class." }, value: "Kindness" },
+                2: { title: "At the Park", vocab: ["Slide", "Swing", "Tree", "Grass", "Bench", "Path", "Pond", "Ball"], story: "Children play happily on the swings at the green park. We sit on a bench near the pond.", question: "Where can you play on a slide?", grammar: { point: "There is / are", example: "There is a swing. There are two trees." }, value: "Sharing" },
+                3: { title: "Wild Animals", vocab: ["Lion", "Elephant", "Monkey", "Zebra", "Tiger", "Giraffe", "Bear", "Snake"], story: "The big elephant eats green leaves in the jungle. The tall giraffe eats leaves from trees too.", question: "Which animal has a long trunk?", grammar: { point: "It has / It is", example: "It has a long trunk. It is big." }, value: "Politeness" },
+                4: { title: "Parts of the Body", vocab: ["Head", "Arms", "Legs", "Feet", "Hands", "Fingers", "Toes", "Shoulders"], story: "Clap your hands and stamp your feet to the music rhythm. Wiggle your fingers and toes!", question: "What do you use to clap?", grammar: { point: "I can... with my...", example: "I can clap with my hands." }, value: "Honesty" },
+                5: { title: "Delicious Food", vocab: ["Rice", "Soup", "Fish", "Chicken", "Noodles", "Vegetable", "Fruit", "Dessert"], story: "Hot chicken soup is very delicious on a rainy day. I also like noodles with vegetables.", question: "What is your favorite food?", grammar: { point: "I like... / My favorite is...", example: "My favorite food is rice." }, value: "Patience" },
+                6: { title: "Our House", vocab: ["Kitchen", "Bedroom", "Bathroom", "Living room", "Garden", "Roof", "Door", "Window"], story: "We watch TV together with family in the living room. Flowers grow in our garden.", question: "Where do we cook food?", grammar: { point: "Where is / are...?", example: "Where is the kitchen? It is here." }, value: "Respect" },
+                7: { title: "Weather", vocab: ["Sunny", "Rainy", "Windy", "Cloudy", "Hot", "Cold", "Stormy", "Snowy"], story: "Take your umbrella because today is a rainy day. Sunny days are hot and bright.", question: "What do you use when it rains?", grammar: { point: "It is sunny / rainy", example: "It is sunny today. It was rainy yesterday." }, value: "Gratitude" },
+                8: { title: "Transport", vocab: ["Car", "Bus", "Bike", "Train", "Boat", "Plane", "Taxi", "Truck"], story: "The red bus takes children safely to school every morning. A big truck carries boxes.", question: "How do you go to school?", grammar: { point: "I go by...", example: "I go to school by bus." }, value: "Teamwork" },
+                9: { title: "Seasons", vocab: ["Spring", "Summer", "Autumn", "Winter", "Hot", "Cold", "Rain", "Snow"], story: "Flowers bloom in spring, and it is hot in summer. Leaves fall in autumn before cold winter.", question: "Which season do you like best?", grammar: { point: "In spring / summer...", example: "In spring, flowers grow. In winter, it is cold." }, value: "Responsibility" },
+                10: { title: "Time", vocab: ["Clock", "Hour", "Minute", "Morning", "Afternoon", "Evening", "Night", "Late"], story: "The clock shows the hour and minute. In the morning we go to school, and at night we sleep.", question: "What time do you wake up?", grammar: { point: "What time is it?", example: "What time is it? It is 7 o'clock." }, value: "Courage" },
+                11: { title: "Shopping", vocab: ["Market", "Money", "Buy", "Sell", "Shop", "Price", "Basket", "Bag"], story: "Mother goes to the market with money to buy fruit. She puts everything in her basket.", question: "What do you need to buy things?", grammar: { point: "How much is it?", example: "How much is it? It is one dollar." }, value: "Friendship" },
+                12: { title: "My Neighborhood", vocab: ["Street", "Shop", "Hospital", "School", "Park", "Library", "Bank", "Post office"], story: "Our street has a school, a shop, and a library. The hospital and bank are near the park.", question: "What places are near your house?", grammar: { point: "Where is the...?", example: "Where is the library? Next to the school." }, value: "Helping Others" },
+                13: { title: "Ocean Life", vocab: ["Fish", "Shark", "Whale", "Crab", "Starfish", "Octopus", "Shell", "Wave"], story: "The big whale swims past the shark in the deep ocean. Crabs and starfish live near the shore.", question: "What animals live in the ocean?", grammar: { point: "It lives in the...", example: "The crab lives in the sea." }, value: "Cleanliness" },
+                14: { title: "Insects", vocab: ["Ant", "Bee", "Butterfly", "Spider", "Ladybug", "Fly", "Grasshopper", "Beetle"], story: "The little ant carries food to its home. A colorful butterfly flies near the flowers.", question: "Which insect makes honey?", grammar: { point: "It can fly / crawl", example: "The bee can fly. The ant can crawl." }, value: "Perseverance" },
+                15: { title: "Musical Instruments", vocab: ["Drum", "Guitar", "Piano", "Violin", "Flute", "Trumpet", "Sing", "Music"], story: "I like to play the drum and sing songs. My sister plays the piano beautifully.", question: "What instrument would you like to play?", grammar: { point: "I can play the...", example: "I can play the drum." }, value: "Empathy" },
+                16: { title: "Farm Life", vocab: ["Farmer", "Cow", "Horse", "Sheep", "Chicken", "Barn", "Field", "Harvest"], story: "The farmer feeds the cow and horse in the barn. In autumn, we harvest rice in the field.", question: "What animals live on a farm?", grammar: { point: "The farmer has...", example: "The farmer has a cow and a horse." }, value: "Confidence" }
+            },
+            'K3': {
+                1: { title: "My Daily Routine", vocab: ["Wake up", "Brush teeth", "Eat breakfast", "Go to school", "Take a bath", "Do homework", "Have lunch", "Go to bed"], story: "I wake up early, brush my teeth, and get ready for school. After school I do my homework.", question: "What do you do first in the morning?", grammar: { point: "I usually... every day", example: "I usually wake up at 6 o'clock every day." }, value: "Kindness" },
+                2: { title: "Jobs & Community", vocab: ["Doctor", "Firefighter", "Police", "Teacher", "Farmer", "Chef", "Pilot", "Engineer"], story: "The brave firefighter helps put out fires and keeps us safe. The chef cooks delicious food for everyone.", question: "Who helps people when they are sick?", grammar: { point: "He/She helps people", example: "The doctor helps sick people." }, value: "Sharing" },
+                3: { title: "Ocean Animals", vocab: ["Shark", "Whale", "Dolphin", "Crab", "Octopus", "Starfish", "Jellyfish", "Seahorse"], story: "Smart dolphins swim and jump gracefully in the blue ocean. The octopus hides among the rocks.", question: "Where do fish and whales live?", grammar: { point: "It lives in the ocean", example: "The dolphin lives in the ocean." }, value: "Politeness" },
+                4: { title: "Plants & Nature", vocab: ["Flower", "Leaf", "Seed", "Plant", "Root", "Tree", "Grass", "Soil"], story: "Water the small green seed so it can grow into a tall tree. Roots grow deep into the soil.", question: "What do plants need to grow?", grammar: { point: "It needs... to grow", example: "A plant needs water and sunlight to grow." }, value: "Honesty" },
+                5: { title: "Feelings", vocab: ["Happy", "Sad", "Angry", "Tired", "Excited", "Scared", "Surprised", "Proud"], story: "Smile and be happy because today is a wonderful day! Sometimes we feel scared, and that is okay too.", question: "How do you feel when you get a gift?", grammar: { point: "I feel...", example: "I feel happy today. She feels tired." }, value: "Patience" },
+                6: { title: "Holidays & Fun", vocab: ["Party", "Cake", "Present", "Music", "Balloon", "Candle", "Guest", "Celebrate"], story: "We eat sweet birthday cake and open nice presents together. Balloons and candles make it special.", question: "What do we eat on birthdays?", grammar: { point: "We celebrate...", example: "We celebrate with cake and music." }, value: "Respect" },
+                7: { title: "Space & Sky", vocab: ["Moon", "Sun", "Star", "Planet", "Rocket", "Astronaut", "Cloud", "Rainbow"], story: "The bright sun shines warmly during the daytime. An astronaut travels to space in a rocket.", question: "What shines in the sky at night?", grammar: { point: "It shines in the...", example: "The sun shines in the sky." }, value: "Gratitude" },
+                8: { title: "Healthy Habits", vocab: ["Wash hands", "Sleep early", "Eat vegetables", "Exercise", "Drink water", "Brush teeth", "Rest", "Stay clean"], story: "Washing our hands keeps us clean and healthy every day. Drinking water and eating vegetables help us grow strong.", question: "Why should we wash our hands?", grammar: { point: "We should...", example: "We should wash our hands before eating." }, value: "Teamwork" },
+                9: { title: "Geography", vocab: ["Mountain", "River", "Lake", "Forest", "Desert", "Island", "Ocean", "Valley"], story: "The tall mountain stands beside a wide river. Far away, a hot desert stretches across the land.", question: "What is the difference between a river and an ocean?", grammar: { point: "It is bigger than...", example: "The mountain is bigger than the hill." }, value: "Responsibility" },
+                10: { title: "Simple Science", vocab: ["Water", "Air", "Fire", "Earth", "Ice", "Steam", "Light", "Sound"], story: "Water can turn into ice when it is cold, and into steam when it is hot. Light and sound travel fast.", question: "What happens to water when it gets very cold?", grammar: { point: "When it is cold, water becomes...", example: "When it is cold, water becomes ice." }, value: "Courage" },
+                11: { title: "Numbers & Counting", vocab: ["Eleven", "Twelve", "Twenty", "Hundred", "Add", "Subtract", "Count", "Number"], story: "We can count past twelve, all the way to twenty and even a hundred. Let's add and subtract numbers.", question: "What number comes after eleven?", grammar: { point: "Numbers past 10", example: "Eleven, twelve... twenty." }, value: "Friendship" },
+                12: { title: "My Country", vocab: ["Flag", "Capital", "King", "Language", "Culture", "Tradition", "Temple", "Festival"], story: "Our flag flies proudly over the capital city. We celebrate our culture and traditions at the temple.", question: "What is the capital of your country?", grammar: { point: "Our country has...", example: "Our country has a flag and a capital city." }, value: "Helping Others" },
+                13: { title: "Technology", vocab: ["Computer", "Phone", "Tablet", "Internet", "Robot", "Camera", "Screen", "Click"], story: "I use a tablet and a computer to learn new things on the internet. A robot can help us too.", question: "What do you use a computer for?", grammar: { point: "I use... to...", example: "I use a computer to learn." }, value: "Cleanliness" },
+                14: { title: "Safety Rules", vocab: ["Look both ways", "Traffic light", "Helmet", "Seatbelt", "Danger", "Careful", "Stop", "Safe"], story: "Always look both ways and wait for the traffic light before crossing. Wear your helmet to stay safe.", question: "What should you do before crossing the street?", grammar: { point: "You should always...", example: "You should always look both ways." }, value: "Perseverance" },
+                15: { title: "Friendship", vocab: ["Share", "Help", "Kind", "Honest", "Trust", "Play together", "Forgive", "Care"], story: "Good friends share their things and help each other. Being kind and honest makes friendship strong.", question: "What makes a good friend?", grammar: { point: "A good friend...", example: "A good friend shares and helps." }, value: "Empathy" },
+                16: { title: "Dreams & Future", vocab: ["Dream", "Goal", "Become", "Work hard", "Study", "Grow up", "Imagine", "Achieve"], story: "Everyone has a dream to become something special when they grow up. Study and work hard to achieve it.", question: "What do you want to become when you grow up?", grammar: { point: "I want to become a...", example: "I want to become a teacher when I grow up." }, value: "Confidence" }
+            }
+        };
+
+        // ===== Progress: stars/badges are earned once per activity and remembered =====
+        // Saved in this browser when the page is opened as a normal web page. When it runs
+        // inside the Hub's secure "Embed Code" box the browser blocks storage, so progress
+        // then lasts until the page is closed (it still can't be farmed by repeated taps).
+        const PROGRESS_KEY = () => 'c2epe_onlineclass_progress_' + state.level;
+        let progress = { stars: 0, badges: 0, awarded: {}, bestQuiz: {} };
+        function loadProgress() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY()) || 'null');
+                if (saved && typeof saved === 'object') progress = Object.assign({ stars: 0, badges: 0, awarded: {}, bestQuiz: {} }, saved);
+            } catch (e) { /* storage not available (e.g. inside the Hub sandbox) */ }
+            state.stars = progress.stars; state.badges = progress.badges;
+            document.getElementById('star-count').innerText = state.stars;
+            document.getElementById('badge-count').innerText = state.badges;
+        }
+        function saveProgress() {
+            progress.stars = state.stars; progress.badges = state.badges;
+            try { localStorage.setItem(PROGRESS_KEY(), JSON.stringify(progress)); } catch (e) {}
+        }
+        // Gives stars only the first time a given activity is done. Returns true if stars were given.
+        function award(key, amount) {
+            const k = state.level + '|' + key;
+            if (progress.awarded[k]) return false;
+            progress.awarded[k] = true;
+            addStars(amount);
+            return true;
+        }
+        const unitKey = (what) => 'u' + state.unit + '|' + what;
+
+        function populateUnitSelect() {
+            const sel = document.getElementById('unit-select');
+            const levelData = realCurriculum[state.level];
+            const prevUnit = state.unit;
+            const unitCount = Object.keys(levelData).length;
+            const labelEl = document.getElementById('unit-select-label');
+            if (labelEl) labelEl.textContent = `Select Unit (1 to ${unitCount})`;
+            // 🎬 marks units that have a video (🆕 = added in the last 7 days)
+            sel.innerHTML = Object.keys(levelData).map(u => {
+                const v = videoFor(state.level, u);
+                const mark = v ? (isRecentlyAdded(v.added) ? ' 🆕' : ' 🎬') : '';
+                return `<option value="${u}">Unit ${u}: ${levelData[u].title}${mark}</option>`;
+            }).join('');
+            // keep the same unit number selected if it still exists for this level
+            if (levelData[prevUnit]) {
+                sel.value = prevUnit;
+                state.unit = prevUnit;
+            } else {
+                state.unit = parseInt(sel.value);
+            }
+        }
+
+        // Phonics only fits early readers (K0/K1) — levels where it's not
+        // shown are also guarded against being left "stuck" on the phonics
+        // tab if the student switches level while it's open.
+        const PHONICS_LEVELS = ['K0', 'K1'];
+
+        function selectLevel(lvl) {
+            state.level = lvl;
+            document.querySelectorAll('.level-btn').forEach(b => {
+                b.classList.remove('bg-blue-600', 'text-white', 'shadow');
+                b.classList.add('bg-gray-100');
+            });
+            document.getElementById('btn-' + lvl).classList.remove('bg-gray-100');
+            document.getElementById('btn-' + lvl).classList.add('bg-blue-600', 'text-white', 'shadow');
+            document.getElementById('current-level-display').innerText = lvl;
+
+            const phonicsBtn = document.getElementById('phonics-tab-btn');
+            const phonicsAllowed = PHONICS_LEVELS.includes(lvl);
+            phonicsBtn.style.display = phonicsAllowed ? '' : 'none';
+            if (!phonicsAllowed && state.tab === 'phonics') { state.tab = 'listening'; highlightActiveTab(); }
+
+            loadProgress();
+            populateUnitSelect();
+            renderContent();
+        }
+
+        function updateUnit() {
+            state.unit = parseInt(document.getElementById('unit-select').value);
+            renderContent();
+            scrollToLesson();
+        }
+
+        // Moves to the next unit within the current level (wrapping back to
+        // unit 1 after the last one), keeping the same module tab open so
+        // a student can go straight through Unit 1 -> Unit 2 -> ... without
+        // re-opening the dropdown each time.
+        function nextLesson() {
+            const levelData = realCurriculum[state.level];
+            const unitNumbers = Object.keys(levelData).map(Number).sort((a, b) => a - b);
+            const idx = unitNumbers.indexOf(state.unit);
+            const nextIdx = (idx === -1 ? 0 : idx + 1) % unitNumbers.length;
+            state.unit = unitNumbers[nextIdx];
+            document.getElementById('unit-select').value = state.unit;
+            renderContent();
+            scrollToLesson(true);
+        }
+
+        function highlightActiveTab() {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-blue-50', 'text-blue-700');
+                b.classList.add('hover:bg-gray-100');
+            });
+            const activeBtn = document.querySelector(`.tab-btn[data-tab="${state.tab}"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('hover:bg-gray-100');
+                activeBtn.classList.add('bg-blue-50', 'text-blue-700');
+            }
+        }
+
+        // On phones the lesson sits below the module list, so after choosing a module,
+        // a unit or the next lesson, the page now scrolls down to the lesson by itself.
+        const isPhone = () => window.matchMedia('(max-width: 767px)').matches;
+        function scrollToLesson(always) {
+            const area = document.getElementById('content-area');
+            if (!area) return;
+            if (!(isPhone() || (always && area.getBoundingClientRect().top < 0))) return;
+            // Wait for the new lesson to be drawn, then glide to it. Some phones stop a smooth
+            // scroll that starts during the tap itself, so if it hasn't arrived shortly after,
+            // jump there directly.
+            setTimeout(() => {
+                area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(() => {
+                    if (Math.abs(area.getBoundingClientRect().top) > 40) area.scrollIntoView({ block: 'start' });
+                }, 700);
+            }, 60);
+        }
+        function jumpToModules() {
+            const side = document.getElementById('module-sidebar');
+            side.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => { if (Math.abs(side.getBoundingClientRect().top) > 40) side.scrollIntoView({ block: 'start' }); }, 700);
+        }
+        function switchTab(tab) {
+            state.tab = tab;
+            highlightActiveTab();
+            renderContent();
+            scrollToLesson();
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        function addStars(amt) {
+            state.stars += amt;
+            document.getElementById('star-count').innerText = state.stars;
+            saveProgress();
+            triggerConfetti();
+        }
+
+        // "Finish Activity" now rewards each activity of each unit once (and one badge per unit),
+        // instead of giving stars and badges every time it is tapped.
+        function completeActivity() {
+            const gotStars = award(unitKey('finish-' + state.tab), 5);
+            let gotBadge = false;
+            const badgeKey = state.level + '|' + unitKey('badge');
+            if (gotStars && !progress.awarded[badgeKey]) {
+                progress.awarded[badgeKey] = true;
+                state.badges += 1;
+                document.getElementById('badge-count').innerText = state.badges;
+                saveProgress();
+                gotBadge = true;
+            }
+            if (gotBadge) alert(`🎉 Awesome! You finished this activity, earned 5 Stars ⭐ and unlocked a new Sticker Badge for Unit ${state.unit}! 🏆`);
+            else if (gotStars) alert(`🎉 Awesome! You finished this activity and earned 5 Stars ⭐!`);
+            else alert(`✅ You already finished this activity. Try another one, or go to the next lesson! ▶️`);
+        }
+
+        // ---------- Helper: Text-to-Speech ----------
+        // Voices load a moment after the page opens, so they are cached when ready.
+        let enVoice = null;
+        function pickVoice() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            enVoice = voices.find(v => v.lang && v.lang.startsWith('en')) || null;
+        }
+        if ('speechSynthesis' in window) { pickVoice(); window.speechSynthesis.onvoiceschanged = pickVoice; }
+        function speak(text, onEnd) {
+            if (!('speechSynthesis' in window)) { if (onEnd) onEnd(false); return false; }
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'en-US';
+            u.rate = 0.85;
+            if (!enVoice) pickVoice();
+            if (enVoice) u.voice = enVoice;
+            if (onEnd) u.onend = () => onEnd(true);
+            window.speechSynthesis.speak(u);
+            return true;
+        }
+
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function allVocabForLevel(level) {
+            let words = [];
+            Object.keys(realCurriculum[level]).forEach(u => words.push(...realCurriculum[level][u].vocab));
+            return [...new Set(words)];
+        }
+        const jsArg = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+        function renderContent() {
+            { const a = document.getElementById('footer-next-module'), b = document.getElementById('footer-next-lesson'); if (a) a.style.display = 'none'; if (b) b.style.display = ''; }
+            let contentDiv = document.getElementById('module-content');
+            const unitData = realCurriculum[state.level][state.unit];
+            stopVideo();              // never leave a video playing in the background
+            updateVideoTabBadge();    // 🆕 / (soon) follows the unit being viewed
+            // Always show the right level and unit at the bottom (it used to stay on "K1" for Video/Phonics)
+            document.getElementById('platform-info').innerText = `C2-EPE Digital Platform - ${state.level} (Unit ${state.unit}: ${unitData.title})`;
+            if (state.tab === 'phonics') { renderPhonics(contentDiv); return; }
+            if (state.tab === 'video') { renderVideoLesson(contentDiv); return; }
+
+            if (state.tab === 'listening') renderListening(contentDiv, unitData);
+            else if (state.tab === 'speaking') renderSpeaking(contentDiv, unitData);
+            else if (state.tab === 'reading') renderReading(contentDiv, unitData);
+            else if (state.tab === 'writing') renderWriting(contentDiv, unitData);
+            else if (state.tab === 'matching') renderMatching(contentDiv, unitData);
+            else if (state.tab === 'coloring') renderColoring(contentDiv, unitData);
+            else if (state.tab === 'quiz') renderQuiz(contentDiv, unitData);
+            else if (state.tab === 'grammar') renderGrammar(contentDiv, unitData);
+        }
+
+        // ===== 1. LISTENING (real text-to-speech) =====
+        let listenState = { storyDone: false };
+        const WORD_EMOJI = {
+            "Achieve": "🏅", "Add": "➕", "Afternoon": "🌤️", "Air": "💨", "Angry": "😠", "Ant": "🐜", "Apple": "🍎",
+            "Arm": "💪", "Arms": "💪", "Astronaut": "🧑‍🚀", "Aunt": "👩", "Autumn": "🍂", "Baby": "👶", "Bag": "🎒",
+            "Ball": "⚽", "Balloon": "🎈", "Banana": "🍌", "Bank": "🏦", "Barn": "🏚️", "Basket": "🧺", "Basketball": "🏀",
+            "Bathroom": "🛁", "Be quiet": "🤫", "Bear": "🐻", "Become": "➡️", "Bed": "🛏️", "Bedroom": "🛏️", "Bee": "🐝",
+            "Beetle": "🪲", "Bench": "🪑", "Bike": "🚲", "Bird": "🐦", "Blanket": "🧣", "Blocks": "🧱", "Blue": "🟦",
+            "Board": "🖼️", "Boat": "⛵", "Book": "📖", "Bread": "🍞", "Brother": "👦", "Brush teeth": "🪥", "Bus": "🚌",
+            "Butterfly": "🦋", "Buy": "🛒", "Bye-bye": "👋", "Cake": "🎂", "Camera": "📷", "Candle": "🕯️", "Cap": "🧢",
+            "Capital": "🏛️", "Car": "🚗", "Care": "💗", "Careful": "⚠️", "Cat": "🐱", "Celebrate": "🎉", "Chair": "🪑",
+            "Cheek": "😊", "Cheese": "🧀", "Chef": "👨‍🍳", "Chick": "🐤", "Chicken": "🐔", "Circle": "⭕", "Clap": "👏",
+            "Class": "🏫", "Click": "🖱️", "Clock": "🕐", "Cloud": "☁️", "Cloudy": "🌥️", "Cold": "🥶", "Computer": "💻",
+            "Count": "🔢", "Cousin": "🧑", "Cow": "🐄", "Crab": "🦀", "Crayon": "🖍️", "Culture": "🎎", "Cup": "☕",
+            "Daddy": "👨", "Dance": "💃", "Danger": "⚠️", "Desert": "🏜️", "Dessert": "🍰", "Diamond": "💎",
+            "Do homework": "📓", "Doctor": "👨‍⚕️", "Dog": "🐶", "Doll": "🪆", "Dolphin": "🐬", "Door": "🚪", "Dream": "💭",
+            "Dress": "👗", "Drink water": "💧", "Driver": "🚕", "Drum": "🥁", "Duck": "🦆", "Ears": "👂", "Earth": "🌍",
+            "Eat breakfast": "🍳", "Eat vegetables": "🥕", "Egg": "🥚", "Eight": "8️⃣", "Elephant": "🐘", "Eleven": "1️⃣1️⃣",
+            "Engineer": "👷", "Eraser": "🧹", "Evening": "🌆", "Excited": "🤩", "Excuse me": "🙏", "Exercise": "🏃",
+            "Eyes": "👀", "Family": "👨‍👩‍👧‍👦", "Farmer": "👨‍🌾", "Fast": "💨", "Father": "👨", "Feet": "🦶", "Festival": "🎪",
+            "Field": "🌾", "Finger": "👆", "Fingers": "🖐️", "Fire": "🔥", "Firefighter": "👨‍🚒", "Fish": "🐟", "Five": "5️⃣",
+            "Flag": "🚩", "Floor": "🧹", "Flower": "🌷", "Flute": "🎼", "Fly": "🪰", "Foot": "🦶", "Football": "⚽",
+            "Forest": "🌲", "Forgive": "🙏", "Fork": "🍴", "Four": "4️⃣", "Friday": "📅", "Friend": "🧑‍🤝‍🧑", "Frog": "🐸",
+            "Fruit": "🍇", "Garden": "🌷", "Giraffe": "🦒", "Gloves": "🧤", "Go to bed": "🛌", "Go to school": "🏫",
+            "Goal": "🎯", "Goldfish": "🐠", "Good morning": "🌅", "Goodbye": "👋", "Grandma": "👵", "Grandpa": "👴",
+            "Grape": "🍇", "Grass": "🌿", "Grasshopper": "🦗", "Green": "🟩", "Grow up": "🌱", "Guest": "🙋", "Guitar": "🎸",
+            "Hair": "💇", "Hamster": "🐹", "Hand": "✋", "Hands": "🙌", "Happy": "😊", "Harvest": "🌾",
+            "Hat": "👒",            // was 🧢, the same picture as "Cap" in the same unit
+            "Have lunch": "🍱", "Head": "🗣️", "Heart": "❤️", "Hello": "👋", "Helmet": "⛑️",
+            "Help": "🤝",           // was 🆘 (emergency), which doesn't fit "helping others"
+            "Hi": "👋", "Honest": "🤞", "Horse": "🐴", "Hospital": "🏥", "Hot": "🥵", "Hour": "🕐", "Hundred": "💯",
+            "Ice": "🧊", "Imagine": "💭", "Internet": "🌐", "Island": "🏝️", "Jacket": "🧥", "Jellyfish": "🪼", "Juice": "🧃",
+            "Jump": "🤸", "Kind": "😇", "King": "👑", "Kitchen": "🍳", "Kite": "🪁", "Kitten": "🐱", "Knee": "🦵",
+            "Knees": "🦵", "Ladybug": "🐞", "Lake": "🏞️", "Language": "🗣️", "Late": "🌆", "Leaf": "🍃", "Leg": "🦵",
+            "Legs": "🦵", "Library": "📚", "Light": "💡", "Line up": "🚶‍♂️", "Lion": "🦁", "Listen": "👂",
+            "Living room": "🛋️", "Look": "👀", "Look both ways": "👀", "Mango": "🥭", "Marble": "🔵", "Market": "🏪",
+            "Milk": "🥛", "Minute": "⏱️", "Monday": "📅", "Money": "💵", "Monkey": "🐒", "Moon": "🌙", "Morning": "🌅",
+            "Mother": "👩", "Mountain": "⛰️", "Mouth": "👄", "Mummy": "👩", "Music": "🎵", "Name": "🪪",
+            "Night": "🌃",          // was 🌙, the same picture as "Moon" in the same unit
+            "Noodles": "🍜", "Nose": "👃", "Number": "🔢", "Nurse": "👩‍⚕️", "Ocean": "🌊", "Octopus": "🐙", "One": "1️⃣",
+            "Orange": "🍊", "Oval": "⬭", "Pan": "🍳", "Pants": "👖", "Park": "🏞️", "Parrot": "🦜", "Party": "🎉",
+            "Path": "🚶", "Pen": "🖊️", "Pencil case": "🖍️", "Phone": "📱", "Piano": "🎹", "Pig": "🐷",
+            "Pillow": "🛌",         // was 🛏️, the same picture as "Bed" in the same unit
+            "Pilot": "👨‍✈️", "Pink": "🩷", "Plane": "✈️", "Planet": "🪐", "Plant": "🌱", "Plate": "🍽️", "Play": "🧸",
+            "Play together": "🤝", "Please": "🙏", "Police": "👮", "Pond": "🪷", "Post office": "📮", "Pot": "🍲",
+            "Present": "🎁", "Price": "💲", "Proud": "😤", "Puppy": "🐶", "Purple": "🟪", "Puzzle": "🧩", "Rabbit": "🐰",
+            "Rain": "🌧️", "Rainbow": "🌈", "Rainy": "🌧️", "Raise hand": "🙋", "Rectangle": "▭", "Red": "🟥", "Rest": "🛌",
+            "Rice": "🍚", "River": "🏞️", "Road": "🛣️", "Robot": "🤖", "Rocket": "🚀", "Roof": "🏠", "Root": "🌱",
+            "Ruler": "📏", "Run": "🏃", "Sad": "😢", "Safe": "🛡️", "Saturday": "📅", "Scared": "😨", "School": "🏫",
+            "Scissors": "✂️", "Screen": "🖥️", "Seahorse": "🐠", "Seatbelt": "🚗", "Seed": "🌰", "Sell": "🏷️",
+            "Seven": "7️⃣", "Share": "🤲", "Shark": "🦈", "Sheep": "🐑", "Shell": "🐚", "Shirt": "👕", "Shoes": "👟",
+            "Shop": "🏪", "Shorts": "🩳", "Shoulder": "🤷", "Shoulders": "🤷", "Sing": "🎤", "Sister": "👧", "Sit": "🪑",
+            "Sit down": "🪑", "Six": "6️⃣", "Skirt": "👗", "Sky": "🌌", "Sleep": "😴", "Sleep early": "😴", "Slide": "🛝",
+            "Smile": "😊", "Snake": "🐍", "Snow": "❄️", "Snowy": "❄️", "Socks": "🧦", "Soil": "🟤", "Sorry": "🙏",
+            "Sound": "🔊", "Soup": "🍲", "Spider": "🕷️", "Spoon": "🥄", "Spring": "🌸",
+            "Square": "🔲",         // was 🏙️ (a city)
+            "Stand": "🧍", "Stand up": "✊", "Star": "⭐", "Starfish": "⭐", "Stay clean": "🧼", "Steam": "💨",
+            "Stop": "🛑", "Stormy": "⛈️", "Street": "🛣️", "Study": "🔬", "Subtract": "➖", "Summer": "☀️", "Sun": "☀️",
+            "Sunday": "📅", "Sunny": "☀️", "Surprised": "😲", "Sweet": "🍬", "Swim": "🏊", "Swing": "🛝", "Table": "🍽️",
+            "Tablet": "📱", "Take a bath": "🛁", "Taxi": "🚕", "Teacher": "👩‍🏫", "Team": "👥", "Teddy": "🧸", "Teeth": "🦷",
+            "Temple": "🛕", "Thank you": "🙏", "Three": "3️⃣", "Thursday": "📅", "Tiger": "🐯", "Tired": "😴",
+            "Today": "📅", "Toes": "🦶", "Top": "🌀", "Tradition": "🎎", "Traffic light": "🚦", "Train": "🚆",
+            "Tree": "🌳", "Triangle": "🔺", "Truck": "🚚", "Trumpet": "🎺", "Trust": "🤝", "Tuesday": "📅",
+            "Tummy": "😋",          // was 🤰 (a pregnant woman), not suitable for this lesson
+            "Turtle": "🐢", "Twelve": "1️⃣2️⃣", "Twenty": "2️⃣0️⃣", "Two": "2️⃣", "Umbrella": "☂️", "Uncle": "👨",
+            "Valley": "🏞️", "Vegetable": "🥕", "Violin": "🎻", "Wake up": "⏰", "Walk": "🚶", "Wall": "🧱",
+            "Wash hands": "🧼", "Water": "💧", "Watermelon": "🍉", "Wave": "🌊", "Wednesday": "📅", "Whale": "🐳",
+            "White": "⬜", "Win": "🏆", "Wind": "💨", "Window": "🪟", "Windy": "💨", "Winter": "❄️", "Work hard": "💪",
+            "Yellow": "🟨", "Yo-yo": "🪀", "Zebra": "🦓"
+        };
+        // Pictures redrawn for the C2-EPE videos (the old ones were unclear or wrong: eraser = bandage,
+        // table = plate, all days = 📅, top = cyclone, skirt = dress …)
+        Object.assign(WORD_EMOJI, {"Eraser": "<svg viewBox='0 0 440 300' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><g transform='rotate(-12 220 150)'><rect x='60' y='90' width='320' height='130' rx='22' fill='#f48fb1' stroke='#37474f' stroke-width='12'/><rect x='200' y='90' width='180' height='130' fill='#42a5f5' stroke='#37474f' stroke-width='12'/></g></svg>", "Skirt": "<svg viewBox='0 0 420 380' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='120' y='40' width='180' height='40' rx='10' fill='#5c6bc0'/><path d='M120 80 L300 80 L370 330 L50 330 Z' fill='#ec407a' stroke='#ad1457' stroke-width='12'/></svg>", "Top": "<svg viewBox='0 0 360 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='168' y='20' width='24' height='70' rx='10' fill='#6d4c41'/><path d='M40 120 Q180 60 320 120 L200 380 Q180 400 160 380 Z' fill='#e53935' stroke='#b71c1c' stroke-width='12'/></svg>", "Square": "<svg viewBox='0 0 420 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='45' y='45' width='330' height='330' rx='18' fill='#1e88e5' stroke='#0d47a1' stroke-width='14'/></svg>", "Rectangle": "<svg viewBox='0 0 420 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='20' y='110' width='380' height='200' rx='16' fill='#fb8c00' stroke='#e65100' stroke-width='14'/></svg>", "Oval": "<svg viewBox='0 0 420 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><ellipse cx='210' cy='210' rx='195' ry='125' fill='#8e24aa' stroke='#4a148c' stroke-width='14'/></svg>", "Table": "<svg viewBox='0 0 440 360' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='30' y='90' width='380' height='40' rx='10' fill='#a1887f' stroke='#5d4037' stroke-width='10'/><rect x='60' y='130' width='30' height='200' fill='#8d6e63'/><rect x='350' y='130' width='30' height='200' fill='#8d6e63'/></svg>", "Plate": "🍽️", "Sky": "<svg viewBox='0 0 460 320' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='20' y='20' width='420' height='280' rx='30' fill='#64b5f6'/><circle cx='370' cy='80' r='38' fill='#fdd835'/><g fill='#fff'><ellipse cx='140' cy='120' rx='70' ry='34'/><ellipse cx='270' cy='210' rx='80' ry='34'/></g></svg>", "Monday": "<svg viewBox='0 0 400 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='40' y='40' width='320' height='350' rx='26' fill='#fff' stroke='#37474f' stroke-width='14'/><rect x='40' y='40' width='320' height='120' rx='26' fill='#e53935'/><text x='200' y='310' text-anchor='middle' font-family='Arial' font-weight='900' font-size='130' fill='#e53935'>MON</text></svg>", "Tuesday": "<svg viewBox='0 0 400 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='40' y='40' width='320' height='350' rx='26' fill='#fff' stroke='#37474f' stroke-width='14'/><rect x='40' y='40' width='320' height='120' rx='26' fill='#fb8c00'/><text x='200' y='310' text-anchor='middle' font-family='Arial' font-weight='900' font-size='130' fill='#fb8c00'>TUE</text></svg>", "Wednesday": "<svg viewBox='0 0 400 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='40' y='40' width='320' height='350' rx='26' fill='#fff' stroke='#37474f' stroke-width='14'/><rect x='40' y='40' width='320' height='120' rx='26' fill='#fdd835'/><text x='200' y='310' text-anchor='middle' font-family='Arial' font-weight='900' font-size='130' fill='#fdd835'>WED</text></svg>", "Thursday": "<svg viewBox='0 0 400 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='40' y='40' width='320' height='350' rx='26' fill='#fff' stroke='#37474f' stroke-width='14'/><rect x='40' y='40' width='320' height='120' rx='26' fill='#43a047'/><text x='200' y='310' text-anchor='middle' font-family='Arial' font-weight='900' font-size='130' fill='#43a047'>THU</text></svg>", "Friday": "<svg viewBox='0 0 400 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='40' y='40' width='320' height='350' rx='26' fill='#fff' stroke='#37474f' stroke-width='14'/><rect x='40' y='40' width='320' height='120' rx='26' fill='#1e88e5'/><text x='200' y='310' text-anchor='middle' font-family='Arial' font-weight='900' font-size='130' fill='#1e88e5'>FRI</text></svg>", "Saturday": "<svg viewBox='0 0 400 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='40' y='40' width='320' height='350' rx='26' fill='#fff' stroke='#37474f' stroke-width='14'/><rect x='40' y='40' width='320' height='120' rx='26' fill='#8e24aa'/><text x='200' y='310' text-anchor='middle' font-family='Arial' font-weight='900' font-size='130' fill='#8e24aa'>SAT</text></svg>", "Sunday": "<svg viewBox='0 0 400 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='40' y='40' width='320' height='350' rx='26' fill='#fff' stroke='#37474f' stroke-width='14'/><rect x='40' y='40' width='320' height='120' rx='26' fill='#d81b60'/><text x='200' y='310' text-anchor='middle' font-family='Arial' font-weight='900' font-size='130' fill='#d81b60'>SUN</text></svg>", "Today": "<svg viewBox='0 0 400 420' width='1.1em' height='1.1em' style='display:inline-block;vertical-align:middle'><rect x='40' y='40' width='320' height='350' rx='26' fill='#fff' stroke='#37474f' stroke-width='14'/><rect x='40' y='40' width='320' height='120' rx='26' fill='#00897b'/><text x='200' y='310' text-anchor='middle' font-family='Arial' font-weight='900' font-size='130' fill='#00897b'>★</text></svg>"});
+        // In a colours lesson, "Orange" means the colour (🟧), not the fruit (🍊)
+        const COLOR_UNIT_EMOJI = { "Orange": "🟧" };
+        // When two words in the SAME unit would show the same picture, the second one uses its
+        // own picture instead, so children can tell them apart (e.g. Football ⚽ / Ball 🏐).
+        const SAME_UNIT_ALT = {
+            "Ball": "🏐", "Feet": "👣", "Hi": "🙋", "Class": "🧑‍🎓", "Pencil case": "👝",
+            "Aunt": "👩‍🦱", "Uncle": "👨‍🦱", "Plate": "🍛", "Goodbye": "🚶👋", "Bye-bye": "😘",
+            "Thank you": "💝", "Sorry": "😔", "Excuse me": "🙇", "Number": "#️⃣", "Knee": "🧎", "Swing": "🎠",
+            "Snow": "☃️", "Hour": "⏳", "Late": "⏰", "Shop": "🛍️", "Harvest": "🚜",
+            "Root": "🥕", "Celebrate": "🥳", "Stay clean": "🚿", "Lake": "🛶", "Valley": "🌄", "Steam": "♨️",
+            "Tradition": "🪔", "Tablet": "📲", "Careful": "🚸", "Trust": "🫶", "Play together": "🧑‍🤝‍🧑", "Imagine": "✨"
+        };
+        function baseEmoji(word, u) {
+            if (u && /colou?rs/i.test(u.title) && COLOR_UNIT_EMOJI[word]) return COLOR_UNIT_EMOJI[word];
+            return WORD_EMOJI[word] || '🔊';
+        }
+        function emojiFor(word, unitData) {
+            const u = unitData || realCurriculum[state.level][state.unit];
+            const e = baseEmoji(word, u);
+            if (u && SAME_UNIT_ALT[word] && u.vocab.some(w => w !== word && baseEmoji(w, u) === e)) return SAME_UNIT_ALT[word];
+            return e;
+        }
+        // Wrong answers for picture questions. Normally they must have a different picture from the
+        // right answer; but in lessons where most words share one picture (e.g. days of the week 📅)
+        // the choices come from that lesson so children read the words.
+        function pickDistractors(word, unitData) {
+            const e = emojiFor(word, unitData);
+            const samePic = unitData.vocab.filter(w => w !== word && emojiFor(w, unitData) === e);
+            if (samePic.length >= 2) return shuffle(samePic).slice(0, 3);
+            return shuffle(allVocabForLevel(state.level).filter(w => w !== word && emojiFor(w, unitData) !== e)).slice(0, 3);
+        }
+
+        function renderListening(contentDiv, unitData) {
+            listenState = { storyDone: false };
+            const supported = 'speechSynthesis' in window;
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">🔊 Listening: Unit ${state.unit} - ${unitData.title}</h2>
+                <p class="text-gray-600 mb-4">Tap each picture to hear the word, then tap "Play the Story".</p>
+                <div class="bg-blue-50 border-2 border-dashed border-blue-300 rounded-2xl p-6">
+                    <div class="grid grid-cols-2 gap-3 mb-5">
+                        ${unitData.vocab.map((w,i) => `
+                            <button onclick="playListenWord('${jsArg(w)}', ${i})" id="lw-${i}" class="bg-white p-3 rounded-xl shadow font-bold text-blue-800 hover:bg-blue-100 cursor-pointer flex flex-col items-center justify-center gap-1 transition ${progress.awarded[state.level + '|' + unitKey('listen-' + i)] ? 'ring-4 ring-green-400' : ''}">
+                                <span class="text-4xl">${emojiFor(w, unitData)}</span>
+                                <span class="text-sm">${w}</span>
+                            </button>`).join('')}
+                    </div>
+                    <div class="text-center">
+                        <button onclick="playListenStory()" class="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-full shadow-lg transition cursor-pointer">▶ Play the Story</button>
+                        <p id="audio-msg" class="text-sm text-green-700 mt-3 font-semibold min-h-[1.25rem]">${supported ? '' : '⚠️ This browser cannot speak audio — try Chrome or Edge.'}</p>
+                    </div>
+                </div>`;
+        }
+        function playListenWord(word, i) {
+            speak(word);
+            award(unitKey('listen-' + i), 1);
+            document.getElementById('lw-' + i).classList.add('ring-4', 'ring-green-400');
+        }
+        function playListenStory() {
+            const unitData = realCurriculum[state.level][state.unit];
+            document.getElementById('audio-msg').innerText = "🔊 Playing story...";
+            speak(unitData.story, () => {
+                document.getElementById('audio-msg').innerText = "✅ Great listening!";
+                if (!listenState.storyDone) { listenState.storyDone = true; award(unitKey('story'), 2); }
+            });
+        }
+
+        // ===== 2. SPEAKING (every word; microphone check where the browser allows it) =====
+        // Speech recognition often can't use the microphone inside the Hub's secure box or on some
+        // phones, so an "I said it!" button is always shown too — children are never stuck.
+        let speakState = { wIndex: 0, words: [] };
+        const hasRecognition = () => ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window);
+        function renderSpeaking(contentDiv, unitData) {
+            speakState = { wIndex: 0, words: unitData.vocab };
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">🗣️ Speaking & Pronunciation</h2>
+                <p class="text-gray-600 mb-4">Look at the picture, listen, then say the word out loud!</p>
+                <div id="speaking-area"></div>`;
+            showSpeakingWord();
+        }
+        function showSpeakingWord() {
+            const area = document.getElementById('speaking-area');
+            if (!area) return;
+            if (speakState.wIndex >= speakState.words.length) {
+                area.innerHTML = `<div class="bg-green-50 border-2 border-green-300 rounded-2xl p-8 text-center">
+                    <p class="text-2xl font-bold text-green-700">🎉 You practiced every word in this unit!</p>
+                </div>`;
+                return;
+            }
+            const word = speakState.words[speakState.wIndex];
+            area.innerHTML = `
+                <div class="bg-amber-50 border-2 border-dashed border-amber-300 rounded-2xl p-8 text-center flex flex-col items-center justify-center">
+                    <p class="text-sm text-gray-500 mb-2">Word ${speakState.wIndex + 1} of ${speakState.words.length}</p>
+                    <div class="text-7xl mb-4">${emojiFor(word)}</div>
+                    <p class="text-2xl font-bold text-gray-800 mb-3">${word}</p>
+                    <button onclick="speak('${jsArg(word)}')" class="text-blue-600 underline text-sm mb-4 cursor-pointer">🔊 Hear it</button>
+                    <div class="flex gap-3 flex-wrap justify-center">
+                        ${hasRecognition() ? `<button onclick="recordWord(this)" id="rec-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-full shadow-lg transition cursor-pointer">🔴 Record</button>` : ''}
+                        <button onclick="markWordPracticed(this)" class="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-full shadow-lg transition cursor-pointer">✅ I said it!</button>
+                    </div>
+                    <p id="rec-msg" class="text-sm mt-3 font-semibold min-h-[1.25rem]"></p>
+                </div>`;
+        }
+        const normalizeSpeech = (s) => String(s).toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim();
+        function recordWord(btn) {
+            const word = speakState.words[speakState.wIndex];
+            const msg = document.getElementById('rec-msg');
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) return;
+            // stop the "Hear it" voice first, or the speaker can bleed into the microphone
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            btn.disabled = true;
+            msg.className = "text-sm mt-3 font-semibold text-blue-600";
+            msg.textContent = "🎙️ Get ready...";
+            setTimeout(() => {
+                let recog;
+                try { recog = new SR(); } catch (e) { btn.disabled = false; msg.textContent = "⚠️ The microphone is not available here — tap “I said it!”."; return; }
+                recog.lang = 'en-US';
+                recog.maxAlternatives = 3;
+                msg.className = "text-sm mt-3 font-semibold text-red-600";
+                msg.textContent = "🎙️ Listening... speak now!";
+                recog.onresult = (e) => {
+                    const alts = Array.from(e.results[0]).map(r => normalizeSpeech(r.transcript));
+                    const want = normalizeSpeech(word);
+                    if (alts.some(a => a === want || (' ' + a + ' ').includes(' ' + want + ' '))) {
+                        msg.className = "text-sm mt-3 font-semibold text-green-600";
+                        msg.textContent = `⭐ Great! I heard: "${alts[0]}"` + (award(unitKey('speak-mic-' + speakState.wIndex), 3) ? ' (+3 ⭐)' : '');
+                        setTimeout(() => { speakState.wIndex++; showSpeakingWord(); }, 1000);
+                    } else {
+                        msg.className = "text-sm mt-3 font-semibold text-red-600";
+                        msg.textContent = `❌ I heard "${alts[0]}" — try again!`;
+                    }
+                };
+                recog.onerror = () => {
+                    msg.className = "text-sm mt-3 font-semibold text-red-600";
+                    msg.textContent = "⚠️ Couldn't hear you — this can happen on some phones. Try again, or tap “I said it!”.";
+                };
+                recog.onend = () => { btn.disabled = false; };
+                try { recog.start(); } catch (err) { btn.disabled = false; msg.textContent = "⚠️ The microphone is not available here — tap “I said it!”."; }
+            }, 400);
+        }
+        function markWordPracticed(btn) {
+            if (btn) { if (btn.disabled) return; btn.disabled = true; }   // a quick double tap no longer skips a word
+            award(unitKey('speak-' + speakState.wIndex), 2);
+            speakState.wIndex++;
+            showSpeakingWord();
+        }
+
+
+        // ===== 3. READING =====
+        const VALUE_BLURBS = {
+            "Kindness": "Being kind means being gentle and caring to others, even in small ways.",
+            "Sharing": "Sharing our things with friends makes everyone happier.",
+            "Politeness": "Saying 'please' and 'thank you' shows we care about others.",
+            "Honesty": "Telling the truth, even when it's hard, makes people trust us.",
+            "Patience": "Waiting calmly, even when it's difficult, is a wonderful skill.",
+            "Respect": "Listening to others and treating them well shows respect.",
+            "Gratitude": "Saying thank you for what we have makes us feel happy.",
+            "Teamwork": "Working together with others helps us do great things.",
+            "Responsibility": "Taking care of our things and our jobs shows responsibility.",
+            "Courage": "Being brave means trying new things even when we feel scared.",
+            "Friendship": "Good friends care about each other and have fun together.",
+            "Helping Others": "Helping someone in need makes the world a better place.",
+            "Cleanliness": "Keeping ourselves and our things clean keeps us healthy.",
+            "Perseverance": "Trying again after a mistake helps us learn and grow.",
+            "Empathy": "Understanding how someone else feels helps us be a good friend.",
+            "Confidence": "Believing in ourselves helps us try new and exciting things."
+        };
+
+        function renderReading(contentDiv, unitData) {
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">📖 Reading Story Time</h2>
+                <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-200">
+                    <p class="text-md text-indigo-900 font-semibold mb-2">Unit ${state.unit}: ${unitData.title}</p>
+                    <p class="text-gray-800 leading-relaxed bg-white p-5 rounded-xl shadow-inner text-lg mb-3">"${unitData.story}"</p>
+                    <button onclick="readStoryAloud()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-5 py-2 rounded-full shadow cursor-pointer">🔊 Read Aloud</button>
+                    <div class="mt-6 bg-white p-4 rounded-xl border border-indigo-100">
+                        <p class="font-bold text-indigo-900 mb-2">🤔 Think about it: ${unitData.question}</p>
+                        <textarea id="reading-answer" rows="2" placeholder="Type your answer here..." class="w-full p-2 border border-gray-300 rounded-lg text-sm"></textarea>
+                        <button onclick="checkReadingAnswer()" class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer text-sm">Check My Answer</button>
+                        <p id="reading-msg" class="text-sm mt-2 font-semibold min-h-[1.25rem]"></p>
+                    </div>
+                    ${unitData.value ? `
+                    <div class="mt-4 bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                        <p class="font-bold text-amber-800 mb-1">💛 Value Corner: ${unitData.value}</p>
+                        <p class="text-sm text-amber-900">${VALUE_BLURBS[unitData.value] || ''}</p>
+                    </div>` : ''}
+                </div>`;
+        }
+        function readStoryAloud() {
+            speak(realCurriculum[state.level][state.unit].story);
+        }
+        // Counts real words (not a single letter or random key) before giving stars
+        const wordCount = (s) => (String(s).match(/[A-Za-z\u1780-\u17FF]{2,}/g) || []).length;
+        function checkReadingAnswer() {
+            const val = document.getElementById('reading-answer').value.trim();
+            const msg = document.getElementById('reading-msg');
+            if (wordCount(val) < 2) { msg.className = "text-sm mt-2 font-semibold text-red-500"; msg.innerText = "✏️ Write a little more — at least two words!"; return; }
+            msg.className = "text-sm mt-2 font-semibold text-green-600";
+            msg.innerText = award(unitKey('reading'), 3) ? "🎉 Great thinking! (+3 ⭐)" : "🎉 Great thinking! (stars already earned for this story)";
+        }
+
+        // ===== 4. WRITING (canvas tracing pad — now every word of the unit) =====
+        let traceDrawn = false;
+        let traceWordIndex = 0;
+        function renderWriting(contentDiv, unitData, wordIndex) {
+            traceWordIndex = Math.min(wordIndex || 0, unitData.vocab.length - 1);
+            const word = unitData.vocab[traceWordIndex];
+            const size = word.length > 9 ? 'text-3xl' : word.length > 6 ? 'text-5xl' : 'text-6xl';
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">✍️ Writing & Digital Tracing</h2>
+                <p class="text-gray-600 mb-3">Choose a word, then trace it with your mouse or finger: <b>${word}</b></p>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    ${unitData.vocab.map((w, i) => `<button onclick="renderWriting(document.getElementById('module-content'), realCurriculum[state.level][state.unit], ${i})" class="px-3 py-1 rounded-full text-sm font-semibold border cursor-pointer ${i === traceWordIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-800 border-blue-200'}">${emojiFor(w, unitData)} ${w}${progress.awarded[state.level + '|' + unitKey('trace-' + i)] ? ' ✅' : ''}</button>`).join('')}
+                </div>
+                <div class="bg-gray-50 border-2 border-gray-300 rounded-2xl p-4 text-center">
+                    <div class="relative mx-auto" style="width:100%; max-width:500px;">
+                        <div class="absolute inset-0 flex items-center justify-center ${size} font-bold text-gray-300 tracking-widest fun-font select-none pointer-events-none">${word}</div>
+                        <canvas id="trace-canvas" width="500" height="180" class="relative bg-white rounded-xl shadow-inner w-full" style="touch-action:none; cursor:crosshair;"></canvas>
+                    </div>
+                    <div class="flex justify-center gap-3 mt-4 flex-wrap">
+                        <button onclick="clearTrace()" class="bg-gray-400 hover:bg-gray-500 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer">🧹 Clear</button>
+                        <button onclick="finishTrace()" class="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer">✅ I'm Done!</button>
+                        <button onclick="nextTraceWord()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer">Next word ▶️</button>
+                    </div>
+                    <p id="trace-msg" class="text-sm mt-2 font-semibold min-h-[1.25rem]"></p>
+                </div>`;
+            setupTraceCanvas();
+        }
+        function nextTraceWord() {
+            const unitData = realCurriculum[state.level][state.unit];
+            renderWriting(document.getElementById('module-content'), unitData, (traceWordIndex + 1) % unitData.vocab.length);
+        }
+        // Tracks the currently-attached window "mouseup" handler so a
+        // previous one gets removed before adding a new one.
+        let traceMouseUpHandler = null;
+        function setupTraceCanvas() {
+            traceDrawn = false;
+            const canvas = document.getElementById('trace-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#2563eb';
+            let drawing = false;
+            function pos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+                const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+                return { x: cx * scaleX, y: cy * scaleY };
+            }
+            function start(e) { drawing = true; traceDrawn = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }
+            function move(e) { if (!drawing) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); }
+            function end() { drawing = false; }
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', move);
+            if (traceMouseUpHandler) window.removeEventListener('mouseup', traceMouseUpHandler);
+            traceMouseUpHandler = end;
+            window.addEventListener('mouseup', traceMouseUpHandler);
+            canvas.addEventListener('touchstart', start, { passive: false });
+            canvas.addEventListener('touchmove', move, { passive: false });
+            canvas.addEventListener('touchend', end);
+        }
+        function clearTrace() {
+            const canvas = document.getElementById('trace-canvas');
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            traceDrawn = false;
+        }
+        function finishTrace() {
+            const msg = document.getElementById('trace-msg');
+            if (!traceDrawn) { msg.className = "text-sm mt-2 font-semibold text-red-500"; msg.innerText = "✏️ Try tracing the word first!"; return; }
+            msg.className = "text-sm mt-2 font-semibold text-green-600";
+            msg.innerText = award(unitKey('trace-' + traceWordIndex), 3) ? "🌟 Beautiful writing! (+3 ⭐)" : "🌟 Beautiful writing! Try the next word ▶️";
+        }
+
+        // ===== 5. VOCAB GAME (listen and choose — now with pictures for young children) =====
+        let matchState = { word: '', remaining: [], locked: false };
+        function renderMatching(contentDiv, unitData) {
+            contentDiv = contentDiv || document.getElementById('module-content');
+            unitData = unitData || realCurriculum[state.level][state.unit];
+            matchState.remaining = shuffle(unitData.vocab.map((_, i) => i));
+            nextMatchRound();
+        }
+        function nextMatchRound() {
+            const contentDiv = document.getElementById('module-content');
+            const unitData = realCurriculum[state.level][state.unit];
+            matchState.locked = false;
+            if (matchState.remaining.length === 0) {
+                contentDiv.innerHTML = `
+                    <h2 class="text-xl font-bold text-blue-800 mb-2">🎮 Vocab Matching Game</h2>
+                    <div class="bg-pink-50 p-8 rounded-2xl border border-pink-200 text-center">
+                        <div class="text-5xl mb-3">🎉</div>
+                        <p class="font-bold text-pink-900 text-lg mb-4">You matched all the words for this unit!</p>
+                        <button onclick="renderMatching(document.getElementById('module-content'), realCurriculum[state.level][state.unit])" class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-5 py-2 rounded-xl shadow cursor-pointer">🔁 Play Again</button>
+                    </div>`;
+                return;
+            }
+            const idx = matchState.remaining[0];
+            const word = unitData.vocab[idx];
+            const distractors = pickDistractors(word, unitData);
+            const options = shuffle([word, ...distractors]);
+            matchState.word = word;
+            matchState.index = idx;
+            const doneCount = unitData.vocab.length - matchState.remaining.length + 1;
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">🎮 Vocab Matching Game</h2>
+                <p class="text-gray-600 mb-4">Listen, then tap the matching picture! (${doneCount}/${unitData.vocab.length})</p>
+                <div class="bg-pink-50 p-6 rounded-2xl border border-pink-200 text-center">
+                    <button onclick="speak(matchState.word)" class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-6 py-3 rounded-full shadow-lg mb-5 cursor-pointer">🔊 Play Word</button>
+                    <div class="grid grid-cols-2 gap-3 max-w-md mx-auto" id="match-options">
+                        ${options.map(o => `<button onclick="checkMatch('${jsArg(o)}')" class="bg-white p-4 rounded-xl shadow font-bold hover:bg-pink-100 cursor-pointer flex flex-col items-center gap-1"><span class="text-4xl">${emojiFor(o, unitData)}</span><span>${o}</span></button>`).join('')}
+                    </div>
+                    <p id="match-ans" class="mt-4 font-bold text-lg min-h-[1.5rem]"></p>
+                </div>`;
+            speak(word);
+        }
+        function checkMatch(chosen) {
+            if (matchState.locked) return;   // ignore extra taps while moving to the next word
+            let el = document.getElementById('match-ans');
+            if (chosen === matchState.word) {
+                matchState.locked = true;
+                document.querySelectorAll('#match-options button').forEach(b => b.disabled = true);
+                const got = award(unitKey('match-' + matchState.index), 3);
+                el.innerHTML = got ? "🎉 Correct match! Great job! (+3 ⭐)" : "🎉 Correct match! Great job!";
+                el.className = "mt-4 font-bold text-lg text-green-600";
+                matchState.remaining.shift();
+                (function (t) { setTimeout(function () { if (state.tab === t) nextMatchRound(); }, 900); })(state.tab);  // only if the student is still on this module
+            } else {
+                el.innerHTML = "❌ Try again — listen once more!";
+                el.className = "mt-4 font-bold text-lg text-red-500";
+            }
+        }
+
+        // ===== 6. COLORING (multi-part SVG painting, picture changes by unit) =====
+        let coloringActive = '#f87171';
+        let coloringParts = [];
+        const COLORING_SHAPES = [
+            { // 0: Teddy bear
+                parts: ['c-body','c-earL','c-earR','c-head','c-bow'],
+                svg: `<ellipse id="c-body" cx="100" cy="150" rx="55" ry="45" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-body')" style="cursor:pointer;"/>
+                      <circle id="c-earL" cx="65" cy="35" r="16" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-earL')" style="cursor:pointer;"/>
+                      <circle id="c-earR" cx="135" cy="35" r="16" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-earR')" style="cursor:pointer;"/>
+                      <circle id="c-head" cx="100" cy="70" r="40" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-head')" style="cursor:pointer;"/>
+                      <circle id="c-bow" cx="100" cy="112" r="10" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-bow')" style="cursor:pointer;"/>
+                      <circle cx="86" cy="65" r="4" fill="#374151" style="pointer-events:none;"/>
+                      <circle cx="114" cy="65" r="4" fill="#374151" style="pointer-events:none;"/>
+                      <ellipse cx="100" cy="80" rx="6" ry="4" fill="#374151" style="pointer-events:none;"/>` },
+            { // 1: Cat
+                parts: ['c-body','c-head','c-earL','c-earR','c-tail'],
+                svg: `<path id="c-tail" d="M150 150 Q185 140 175 100" fill="none" stroke="#e5e7eb" stroke-width="14" stroke-linecap="round" onclick="paintPart('c-tail')" style="cursor:pointer;"/>
+                      <ellipse id="c-body" cx="100" cy="145" rx="45" ry="40" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-body')" style="cursor:pointer;"/>
+                      <circle id="c-head" cx="100" cy="75" r="38" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-head')" style="cursor:pointer;"/>
+                      <polygon id="c-earL" points="70,50 60,20 90,45" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-earL')" style="cursor:pointer;"/>
+                      <polygon id="c-earR" points="130,50 140,20 110,45" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-earR')" style="cursor:pointer;"/>
+                      <circle cx="85" cy="72" r="4" fill="#374151" style="pointer-events:none;"/>
+                      <circle cx="115" cy="72" r="4" fill="#374151" style="pointer-events:none;"/>
+                      <path d="M92 88 Q100 94 108 88" fill="none" stroke="#374151" stroke-width="2" style="pointer-events:none;"/>` },
+            { // 2: House
+                parts: ['c-wall','c-roof','c-door','c-window','c-chimney'],
+                svg: `<rect id="c-chimney" x="140" y="30" width="16" height="35" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-chimney')" style="cursor:pointer;"/>
+                      <polygon id="c-roof" points="100,25 30,85 170,85" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-roof')" style="cursor:pointer;"/>
+                      <rect id="c-wall" x="40" y="85" width="120" height="90" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-wall')" style="cursor:pointer;"/>
+                      <rect id="c-door" x="88" y="130" width="24" height="45" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-door')" style="cursor:pointer;"/>
+                      <rect id="c-window" x="55" y="105" width="24" height="24" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-window')" style="cursor:pointer;"/>` },
+            { // 3: Flower
+                parts: ['c-p1','c-p2','c-p3','c-p4','c-center','c-stem'],
+                svg: `<rect id="c-stem" x="95" y="120" width="10" height="60" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-stem')" style="cursor:pointer;"/>
+                      <ellipse id="c-p1" cx="100" cy="65" rx="18" ry="28" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-p1')" style="cursor:pointer;"/>
+                      <ellipse id="c-p2" cx="100" cy="115" rx="18" ry="28" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-p2')" style="cursor:pointer;"/>
+                      <ellipse id="c-p3" cx="70" cy="90" rx="28" ry="18" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-p3')" style="cursor:pointer;"/>
+                      <ellipse id="c-p4" cx="130" cy="90" rx="28" ry="18" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-p4')" style="cursor:pointer;"/>
+                      <circle id="c-center" cx="100" cy="90" r="16" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-center')" style="cursor:pointer;"/>` },
+            { // 4: Fish
+                parts: ['c-body','c-tail','c-finTop','c-eye'],
+                svg: `<polygon id="c-tail" points="150,100 185,75 185,125" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-tail')" style="cursor:pointer;"/>
+                      <ellipse id="c-body" cx="95" cy="100" rx="55" ry="35" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-body')" style="cursor:pointer;"/>
+                      <polygon id="c-finTop" points="85,68 100,40 115,68" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-finTop')" style="cursor:pointer;"/>
+                      <circle id="c-eye" cx="60" cy="90" r="8" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-eye')" style="cursor:pointer;"/>
+                      <circle cx="60" cy="90" r="3" fill="#374151" style="pointer-events:none;"/>` },
+            { // 5: Butterfly
+                parts: ['c-wingTL','c-wingTR','c-wingBL','c-wingBR','c-body'],
+                svg: `<ellipse id="c-wingTL" cx="65" cy="65" rx="35" ry="28" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-wingTL')" style="cursor:pointer;"/>
+                      <ellipse id="c-wingTR" cx="135" cy="65" rx="35" ry="28" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-wingTR')" style="cursor:pointer;"/>
+                      <ellipse id="c-wingBL" cx="70" cy="120" rx="26" ry="20" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-wingBL')" style="cursor:pointer;"/>
+                      <ellipse id="c-wingBR" cx="130" cy="120" rx="26" ry="20" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-wingBR')" style="cursor:pointer;"/>
+                      <rect id="c-body" x="94" y="45" width="12" height="90" rx="6" fill="#e5e7eb" stroke="#374151" stroke-width="3" onclick="paintPart('c-body')" style="cursor:pointer;"/>` },
+        ];
+        let paintedParts = new Set();
+        function renderColoring(contentDiv, unitData) {
+            coloringActive = '#f87171';
+            paintedParts = new Set();
+            const shape = COLORING_SHAPES[(state.unit - 1) % COLORING_SHAPES.length];
+            coloringParts = shape.parts;
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">🎨 Digital Fun Coloring</h2>
+                <p class="text-gray-600 mb-4">Pick a color, then tap a part of the picture to paint it!</p>
+                <div class="bg-amber-50 p-6 rounded-2xl border border-amber-200 text-center">
+                    <svg viewBox="0 0 200 200" class="mx-auto mb-4" style="width:220px; height:220px;">
+                        ${shape.svg}
+                    </svg>
+                    <div class="flex justify-center gap-3 flex-wrap">
+                        ${['#f87171','#60a5fa','#4ade80','#facc15','#c084fc','#fb923c'].map(c => `<button onclick="setColor('${c}', this)" class="color-btn w-10 h-10 rounded-full shadow cursor-pointer ${c === coloringActive ? 'ring-4 ring-blue-500' : ''}" style="background:${c};" aria-label="color"></button>`).join('')}
+                    </div>
+                    <div class="flex justify-center gap-3 mt-4">
+                        <button onclick="resetColoring()" class="bg-gray-400 hover:bg-gray-500 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer text-sm">🧹 Reset</button>
+                        <button onclick="finishColoring()" class="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer text-sm">✅ I'm Done!</button>
+                    </div>
+                </div>`;
+        }
+        // The chosen colour is now shown with a ring so children can see which one is picked
+        function setColor(hex, btn) {
+            coloringActive = hex;
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('ring-4', 'ring-blue-500'));
+            if (btn) btn.classList.add('ring-4', 'ring-blue-500');
+        }
+        function paintPart(id) {
+            document.getElementById(id).setAttribute(id === 'c-tail' && document.getElementById(id).tagName === 'path' ? 'stroke' : 'fill', coloringActive);
+            paintedParts.add(id);
+        }
+        function resetColoring() {
+            coloringParts.forEach(id => {
+                const el = document.getElementById(id);
+                el.setAttribute(el.tagName === 'path' ? 'stroke' : 'fill', '#e5e7eb');
+            });
+            paintedParts = new Set();
+        }
+        function finishColoring() {
+            if (paintedParts.size < Math.ceil(coloringParts.length / 2)) { alert('🎨 Paint a few more parts of the picture first!'); return; }
+            triggerConfetti();
+            alert(award(unitKey('coloring'), 3) ? '🎨 Beautiful artwork! (+3 ⭐)' : '🎨 Beautiful artwork!');
+        }
+
+        // ===== 8. GRAMMAR BOX (pattern + example + free-practice sentence) =====
+        function renderGrammar(contentDiv, unitData) {
+            const g = unitData.grammar;
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">📐 Grammar Box</h2>
+                <p class="text-gray-600 mb-4">Unit ${state.unit}: ${unitData.title}</p>
+                <div class="bg-sky-50 p-6 rounded-2xl border border-sky-200">
+                    <div class="bg-white p-5 rounded-xl shadow-inner mb-4">
+                        <p class="text-sm text-sky-600 font-semibold mb-1">Today's pattern:</p>
+                        <p class="text-2xl font-bold text-sky-900 fun-font">${g ? g.point : ''}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-sky-100 mb-4">
+                        <p class="text-sm text-sky-600 font-semibold mb-1">Example:</p>
+                        <p class="text-gray-800 text-lg mb-2">${g ? g.example : ''}</p>
+                        <button onclick="speak('${g ? jsArg(g.example) : ''}')" class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-4 py-2 rounded-full shadow text-sm cursor-pointer">🔊 Listen</button>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-sky-100">
+                        <p class="font-bold text-sky-900 mb-2">✏️ Now you try! Write your own sentence using this pattern:</p>
+                        <textarea id="grammar-answer" rows="2" placeholder="Type your sentence here..." class="w-full p-2 border border-gray-300 rounded-lg text-sm"></textarea>
+                        <button onclick="checkGrammarAnswer()" class="mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2 rounded-xl shadow cursor-pointer text-sm">Check My Sentence</button>
+                        <p id="grammar-msg" class="text-sm mt-2 font-semibold min-h-[1.25rem]"></p>
+                    </div>
+                </div>`;
+        }
+        function checkGrammarAnswer() {
+            const val = document.getElementById('grammar-answer').value.trim();
+            const msg = document.getElementById('grammar-msg');
+            if (wordCount(val) < 2) { msg.className = "text-sm mt-2 font-semibold text-red-500"; msg.innerText = "✏️ Write a whole sentence first!"; return; }
+            msg.className = "text-sm mt-2 font-semibold text-green-600";
+            msg.innerText = award(unitKey('grammar'), 3) ? "🌟 Nice sentence! (+3 ⭐)" : "🌟 Nice sentence!";
+        }
+
+        // ===== 9. ABC PHONICS — "Letters of the Week" (K0/K1 only) =====
+        // The 26 letters are spread over the 16 units, so every unit has its own letters:
+        //   Units 1–10: two letters each (A B, C D ... S T)   Units 11–16: one letter each (U ... Z)
+        // "See all letters A–Z" still shows the full alphabet for review.
+        const LETTER_PLAN = {
+            1: ['A','B'], 2: ['C','D'], 3: ['E','F'], 4: ['G','H'], 5: ['I','J'], 6: ['K','L'], 7: ['M','N'],
+            8: ['O','P'], 9: ['Q','R'], 10: ['S','T'], 11: ['U'], 12: ['V'], 13: ['W'], 14: ['X'], 15: ['Y'], 16: ['Z']
+        };
+        // Four picture words per letter (the first one is the "A is for ..." word).
+        // X is taught as the sound at the END of a word (fox, box, six), as in most phonics courses.
+        const PHONICS_WORDS = {
+            A: [['Apple','🍎'],['Ant','🐜'],['Alligator','🐊'],['Airplane','✈️']],
+            B: [['Ball','⚽'],['Bear','🐻'],['Banana','🍌'],['Bird','🐦']],
+            C: [['Cat','🐱'],['Car','🚗'],['Cake','🎂'],['Cow','🐄']],
+            D: [['Dog','🐶'],['Duck','🦆'],['Drum','🥁'],['Door','🚪']],
+            E: [['Egg','🥚'],['Elephant','🐘'],['Envelope','✉️'],['Elbow','💪']],
+            F: [['Fish','🐟'],['Frog','🐸'],['Flower','🌷'],['Fire','🔥']],
+            G: [['Grape','🍇'],['Goat','🐐'],['Gift','🎁'],['Guitar','🎸']],
+            H: [['Hat','👒'],['House','🏠'],['Horse','🐴'],['Hand','✋']],
+            I: [['Insect','🐛'],['Iguana','🦎'],['Ink','🖋️'],['Ice cream','🍦']],
+            J: [['Juice','🧃'],['Jellyfish','🪼'],['Jacket','🧥'],['Jeep','🚙']],
+            K: [['Kite','🪁'],['Key','🔑'],['King','🤴'],['Kangaroo','🦘']],
+            L: [['Lion','🦁'],['Leaf','🍃'],['Lemon','🍋'],['Lamp','💡']],
+            M: [['Moon','🌙'],['Monkey','🐒'],['Milk','🥛'],['Mouse','🐭']],
+            N: [['Nose','👃'],['Nest','🪺'],['Nut','🥜'],['Net','🥅']],
+            O: [['Octopus','🐙'],['Orange','🍊'],['Ox','🐂'],['Olive','🫒']],
+            P: [['Pig','🐷'],['Pen','🖊️'],['Pizza','🍕'],['Panda','🐼']],
+            Q: [['Queen','👸'],['Question','❓'],['Quiet','🤫'],['Quack','🦆']],
+            R: [['Rabbit','🐰'],['Rain','🌧️'],['Robot','🤖'],['Rainbow','🌈']],
+            S: [['Sun','☀️'],['Snake','🐍'],['Star','⭐'],['Sock','🧦']],
+            T: [['Tree','🌳'],['Tiger','🐯'],['Train','🚆'],['Turtle','🐢']],
+            U: [['Umbrella','☂️'],['Up','⬆️'],['Unicorn','🦄'],['Under','⬇️']],
+            V: [['Van','🚐'],['Violin','🎻'],['Volcano','🌋'],['Vase','🏺']],
+            W: [['Watermelon','🍉'],['Whale','🐳'],['Window','🪟'],['Worm','🪱']],
+            X: [['Fox','🦊'],['Box','📦'],['Six','6️⃣'],['X-ray','🩻']],
+            Y: [['Yo-yo','🪀'],['Yellow','🟨'],['Yarn','🧶'],['Yogurt','🍶']],
+            Z: [['Zebra','🦓'],['Zero','0️⃣'],['Zigzag','〰️'],['Zip','🤐']]
+        };
+        const ALPHABET = Object.keys(PHONICS_WORDS);
+        const lettersFor = (unit) => LETTER_PLAN[unit] || LETTER_PLAN[1];
+        const letterIntro = (L) => L === 'X'
+            ? 'X. Listen for X at the end: fox, box, six.'
+            : `${L}. ${L} is for ${PHONICS_WORDS[L][0][0]}.`;
+        let phonicsGame = { rounds: [], index: 0, score: 0, locked: false };
+
+        function renderPhonics(contentDiv) {
+            const letters = lettersFor(state.unit);
+            const firstNo = ALPHABET.indexOf(letters[0]) + 1, lastNo = ALPHABET.indexOf(letters[letters.length - 1]) + 1;
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-1">🔤 ABC Phonics — Letters of the Week</h2>
+                <p class="text-gray-600 mb-4">Unit ${state.unit}: letter${letters.length > 1 ? 's' : ''} <b>${letters.join(' and ')}</b>
+                   <span class="text-sm text-gray-400">(letters ${firstNo === lastNo ? firstNo : firstNo + '–' + lastNo} of 26)</span></p>
+                <div class="flex flex-col gap-5">
+                    ${letters.map(L => `
+                    <div class="bg-yellow-50 border-2 border-dashed border-yellow-300 rounded-2xl p-5">
+                        <div class="flex items-center gap-4 flex-wrap mb-4">
+                            <button onclick="sayLetter('${L}')" id="ph-big-${L}" class="bg-white rounded-2xl shadow px-6 py-3 cursor-pointer hover:bg-yellow-100 ${progress.awarded[state.level + '|phonics-letter-' + L] ? 'ring-4 ring-green-400' : ''}" aria-label="Hear the letter ${L}">
+                                <span class="text-6xl font-bold text-blue-800 fun-font">${L} <span class="text-5xl text-pink-500">${L.toLowerCase()}</span></span>
+                            </button>
+                            <div>
+                                <p class="font-bold text-amber-800">🔊 Tap the letter to hear it.</p>
+                                <p class="text-sm text-gray-600">${L === 'X' ? 'X is usually at the <b>end</b> of a word.' : `Words that start with <b>${L}</b>:`}</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            ${PHONICS_WORDS[L].map(([w, e], i) => `
+                                <button onclick="sayPhonicsWord('${L}', ${i})" id="ph-${L}-${i}" class="bg-white p-3 rounded-xl shadow font-bold text-blue-800 hover:bg-yellow-100 cursor-pointer flex flex-col items-center gap-1 ${progress.awarded[state.level + '|phonics-word-' + L + i] ? 'ring-4 ring-green-400' : ''}">
+                                    <span class="text-4xl">${e}</span>
+                                    <span class="text-sm">${highlightLetter(w, L)}</span>
+                                </button>`).join('')}
+                        </div>
+                    </div>`).join('')}
+                    <div class="bg-purple-50 border border-purple-200 rounded-2xl p-5" id="phonics-game"></div>
+                    <div class="text-center">
+                        <button onclick="renderAlphabet()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-full shadow cursor-pointer">🔤 See all letters A–Z</button>
+                    </div>
+                </div>`;
+            startPhonicsGame();
+        }
+        // Colours the letter being learned inside each word (first letter, or the x at the end)
+        function highlightLetter(word, L) {
+            const i = L === 'X' ? word.toLowerCase().lastIndexOf('x') : 0;
+            if (i < 0) return word;
+            return word.slice(0, i) + `<span class="text-pink-500 text-base">${word[i]}</span>` + word.slice(i + 1);
+        }
+        function sayLetter(L) {
+            speak(letterIntro(L));
+            if (award('phonics-letter-' + L, 1)) document.getElementById('ph-big-' + L).classList.add('ring-4', 'ring-green-400');
+        }
+        function sayPhonicsWord(L, i) {
+            speak(PHONICS_WORDS[L][i][0]);
+            if (award('phonics-word-' + L + i, 1)) document.getElementById(`ph-${L}-${i}`).classList.add('ring-4', 'ring-green-400');
+        }
+
+        // Mini game: "Which one starts with B?" — 4 rounds, answers lock after the first tap
+        function startPhonicsGame() {
+            const letters = lettersFor(state.unit);
+            const others = ALPHABET.filter(L => !letters.includes(L));
+            const rounds = [];
+            for (let r = 0; r < 4; r++) {
+                const L = letters[r % letters.length];
+                const right = PHONICS_WORDS[L][r % 4];
+                const fits = ([w]) => L === 'X' ? /x/i.test(w) : w[0].toUpperCase() === L;
+                const pool = others.flatMap(o => PHONICS_WORDS[o]).filter(p => !fits(p) && p[1] !== right[1]);
+                const wrong = shuffle(pool).slice(0, 2);
+                rounds.push({ L, right, options: shuffle([right, ...wrong]) });
+            }
+            phonicsGame = { rounds, index: 0, score: 0, locked: false };
+            showPhonicsRound();
+        }
+        function showPhonicsRound() {
+            const box = document.getElementById('phonics-game');
+            if (!box) return;
+            phonicsGame.locked = false;
+            const g = phonicsGame;
+            if (g.index >= g.rounds.length) {
+                const perfect = g.score === g.rounds.length;
+                const got = perfect && award(unitKey('phonics-game'), 3);
+                if (perfect) triggerConfetti();
+                box.innerHTML = `
+                    <p class="font-bold text-purple-900 text-lg text-center mb-2">${perfect ? '🏆' : '💪'} ${g.score} / ${g.rounds.length} correct${got ? ' (+3 ⭐)' : ''}</p>
+                    <p class="text-center text-sm text-gray-600 mb-3">${perfect ? 'Super listening!' : 'Get all 4 right to earn 3 ⭐!'}</p>
+                    <div class="text-center"><button onclick="startPhonicsGame()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-5 py-2 rounded-xl shadow cursor-pointer">🔁 Play again</button></div>`;
+                return;
+            }
+            const round = g.rounds[g.index];
+            const ask = round.L === 'X' ? 'Which one ends with X?' : `Which one starts with ${round.L}?`;
+            box.innerHTML = `
+                <p class="font-bold text-purple-900 mb-1">🎮 Letter game (${g.index + 1}/${g.rounds.length})</p>
+                <p class="text-lg font-bold text-gray-800 mb-3">${ask} <button onclick="speak('${ask}')" class="text-sm text-blue-600 underline cursor-pointer">🔊</button></p>
+                <div class="grid grid-cols-3 gap-3" id="phonics-options">
+                    ${round.options.map(([w, e]) => `<button onclick="answerPhonics('${jsArg(w)}')" class="bg-white p-3 rounded-xl shadow hover:bg-purple-100 cursor-pointer flex flex-col items-center gap-1"><span class="text-4xl">${e}</span><span class="text-sm font-semibold">${w}</span></button>`).join('')}
+                </div>
+                <p id="phonics-ans" class="mt-3 font-bold min-h-[1.5rem]"></p>`;
+            speak(ask);
+        }
+        function answerPhonics(word) {
+            if (phonicsGame.locked) return;
+            phonicsGame.locked = true;
+            document.querySelectorAll('#phonics-options button').forEach(b => b.disabled = true);
+            const round = phonicsGame.rounds[phonicsGame.index];
+            const el = document.getElementById('phonics-ans');
+            if (word === round.right[0]) {
+                phonicsGame.score++;
+                el.className = 'mt-3 font-bold min-h-[1.5rem] text-green-600';
+                el.textContent = `🎉 Yes! ${round.right[0]} ${round.L === 'X' ? 'ends' : 'starts'} with ${round.L}.`;
+            } else {
+                el.className = 'mt-3 font-bold min-h-[1.5rem] text-red-500';
+                el.textContent = `❌ It was ${round.right[0]} ${round.right[1]}`;
+            }
+            speak(round.right[0]);
+            phonicsGame.index++;
+            setTimeout(showPhonicsRound, 1300);
+        }
+
+        // Full alphabet for review (letters from finished units show a green ring)
+        function renderAlphabet() {
+            const contentDiv = document.getElementById('module-content');
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">🔤 All letters A–Z</h2>
+                <p class="text-gray-600 mb-4">Tap a letter to hear it. Green letters are ones you have practised.</p>
+                <div class="bg-yellow-50 border-2 border-dashed border-yellow-300 rounded-2xl p-6">
+                    <div class="grid grid-cols-4 sm:grid-cols-6 gap-3 mb-4">
+                        ${ALPHABET.map(L => `
+                            <button onclick="speak(letterIntro('${L}'))" class="bg-white p-3 rounded-xl shadow font-bold text-blue-800 hover:bg-yellow-100 cursor-pointer flex flex-col items-center ${progress.awarded[state.level + '|phonics-letter-' + L] ? 'ring-4 ring-green-400' : ''}">
+                                <span class="text-2xl">${L}${L.toLowerCase()}</span>
+                                <span class="text-xl">${PHONICS_WORDS[L][0][1]}</span>
+                            </button>`).join('')}
+                    </div>
+                    <div class="text-center"><button onclick="renderPhonics(document.getElementById('module-content'))" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-full shadow cursor-pointer">◀ Back to Unit ${state.unit} letters</button></div>
+                </div>`;
+        }
+
+        // ===== 0. VIDEO LESSON — one video for each unit =====
+        //
+        // ┌──────────────────────── ADMIN: HOW TO ADD A VIDEO ────────────────────────┐
+        // │ Add one line per video in VIDEO_LESSONS below, using the key 'LEVEL-UNIT'. │
+        // │   youtube : the YouTube link (or just its ID)                              │
+        // │   added   : today's date 'YYYY-MM-DD' — shows 🆕 for 7 days (optional)     │
+        // │   questions: optional pause-and-ask questions (time in seconds):           │
+        // │     { time: 30, question: '...', options: ['a','b','c'], correct: 0 }      │
+        // │ Example:                                                                   │
+        // │   'K0-1': { youtube: 'https://www.youtube.com/watch?v=XXXXXXXXXXX',        │
+        // │             added: '2026-10-01',                                           │
+        // │             questions: [ { time: 20, question: 'What do we say first?',    │
+        // │                            options: ['Hello','Goodbye'], correct: 0 } ] }, │
+        // │ Units with no line here show "Video Coming Soon".                          │
+        // └────────────────────────────────────────────────────────────────────────────┘
+        // C2-EPE's own K1 videos (MP4 on the school website) — Unit N = video Lesson N
+        const VIDEO_BASE = 'https://chansokkh7-spec.github.io/c2epe-kinder/';
+        const VIDEO_LESSONS = {
+            'K1-1': { mp4: VIDEO_BASE + 'K1-Lesson01-Hello.mp4?v=20261031', added: '2026-10-16' },
+            'K1-2': { mp4: VIDEO_BASE + 'K1-Lesson02-School-Things.mp4?v=20261031', added: '2026-10-16' },
+            'K1-3': { mp4: VIDEO_BASE + 'K1-Lesson03-Family-Friends.mp4?v=20261031', added: '2026-10-16' },
+            'K1-4': { mp4: VIDEO_BASE + 'K1-Lesson04-Shapes-Numbers.mp4?v=20261031', added: '2026-10-16' },
+            'K1-5': { mp4: VIDEO_BASE + 'K1-Lesson05-Toys-Games.mp4?v=20261031', added: '2026-10-16' },
+            'K1-6': { mp4: VIDEO_BASE + 'K1-Lesson06-Pets.mp4?v=20261031', added: '2026-10-16' },
+            'K1-7': { mp4: VIDEO_BASE + 'K1-Lesson07-Food.mp4?v=20261031', added: '2026-10-16' },
+            'K1-8': { mp4: VIDEO_BASE + 'K1-Lesson08-Clothes.mp4?v=20261031', added: '2026-10-16' },
+            'K1-9': { mp4: VIDEO_BASE + 'K1-Lesson09-Numbers.mp4?v=20261031', added: '2026-10-16' },
+            'K1-10': { mp4: VIDEO_BASE + 'K1-Lesson10-Days.mp4?v=20261031', added: '2026-10-16' },
+            'K1-11': { mp4: VIDEO_BASE + 'K1-Lesson11-My-Body.mp4?v=20261031', added: '2026-10-16' },
+            'K1-12': { mp4: VIDEO_BASE + 'K1-Lesson12-Kitchen.mp4?v=20261031', added: '2026-10-16' },
+            'K1-13': { mp4: VIDEO_BASE + 'K1-Lesson13-Transport.mp4?v=20261031', added: '2026-10-16' },
+            'K1-14': { mp4: VIDEO_BASE + 'K1-Lesson14-Sports.mp4?v=20261031', added: '2026-10-16' },
+            'K1-15': { mp4: VIDEO_BASE + 'K1-Lesson15-Jobs.mp4?v=20261031', added: '2026-10-16' },
+            'K1-16': { mp4: VIDEO_BASE + 'K1-Lesson16-Nature.mp4?v=20261031', added: '2026-10-16' },
+        };
+
+        function youtubeIdOf(link) {
+            const s = String(link || '').trim();
+            if (/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
+            const m = s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/);
+            return m ? m[1] : '';
+        }
+        function videoFor(level, unit) {
+            const v = VIDEO_LESSONS[level + '-' + unit];
+            if (!v) return null;
+            if (v.mp4 && /^https:\/\//.test(v.mp4)) return { mp4: v.mp4, id: v.mp4, added: v.added || '', questions: Array.isArray(v.questions) ? v.questions : [] };
+            const id = youtubeIdOf(v.youtube);
+            return id ? { id, added: v.added || '', questions: Array.isArray(v.questions) ? v.questions : [] } : null;
+        }
+        function isRecentlyAdded(dateStr) {
+            if (!dateStr) return false;
+            const added = new Date(dateStr);
+            if (isNaN(added.getTime())) return false;
+            const daysSince = (Date.now() - added.getTime()) / (1000 * 60 * 60 * 24);
+            return daysSince >= 0 && daysSince <= 7;
+        }
+        // The Video tab shows 🆕 when THIS unit has a new video; the unit list shows 🎬 / 🆕 per unit
+        function updateVideoTabBadge() {
+            const btn = document.getElementById('video-tab-btn');
+            if (!btn) return;
+            const v = videoFor(state.level, state.unit);
+            btn.textContent = (v && isRecentlyAdded(v.added) ? '🆕 ' : '') + '📹 0. Video Lesson' + (v ? '' : ' (soon)');
+        }
+
+        let ytPlayer = null;
+        let ytPollInterval = null;
+        let ytAnsweredCheckpoints = new Set();
+        let ytApiLoadPromise = null;
+        let ytFallbackTimer = null;
+        let currentVideo = null;
+
+        // Stops the player and its timers whenever the student leaves the Video tab or changes unit
+        function stopVideo() {
+            if (ytPollInterval) { clearInterval(ytPollInterval); ytPollInterval = null; }
+            if (ytFallbackTimer) { clearTimeout(ytFallbackTimer); ytFallbackTimer = null; }
+            if (ytPlayer && typeof ytPlayer.destroy === 'function') { try { ytPlayer.destroy(); } catch (e) {} }
+            ytPlayer = null;
+        }
+
+        function loadYouTubeApi() {
+            if (window.YT && window.YT.Player) return Promise.resolve();
+            if (ytApiLoadPromise) return ytApiLoadPromise;
+            ytApiLoadPromise = new Promise((resolve, reject) => {
+                window.onYouTubeIframeAPIReady = resolve;
+                const tag = document.createElement('script');
+                tag.src = 'https://www.youtube.com/iframe_api';
+                tag.onerror = () => { ytApiLoadPromise = null; reject(new Error('YouTube could not load')); };
+                document.head.appendChild(tag);
+            });
+            return ytApiLoadPromise;
+        }
+
+        function renderVideoLesson(contentDiv) {
+            stopVideo();
+            ytAnsweredCheckpoints = new Set();
+            const unitData = realCurriculum[state.level][state.unit];
+            currentVideo = videoFor(state.level, state.unit);
+
+            if (!currentVideo) {
+                contentDiv.innerHTML = `
+                    <h2 class="text-xl font-bold text-blue-800 mb-2">📹 Video Lesson — Unit ${state.unit}: ${unitData.title}</h2>
+                    <div class="bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl p-10 text-center">
+                        <div class="text-5xl mb-4">🎬</div>
+                        <p class="text-xl font-bold text-blue-900 mb-2">Video Coming Soon!</p>
+                        <p class="text-gray-600 mb-4">Your teacher is preparing the video for this unit. For now, try the other learning modules!</p>
+                        <button onclick="switchTab('listening')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-full shadow cursor-pointer">🔊 Start with Listening</button>
+                    </div>`;
+                return;
+            }
+
+            if (currentVideo.mp4) { renderMp4Lesson(contentDiv, unitData); return; }
+            const watchUrl = 'https://www.youtube.com/watch?v=' + currentVideo.id;
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">📹 Video Lesson — Unit ${state.unit}: ${unitData.title}</h2>
+                <p class="text-gray-600 mb-4">${currentVideo.questions.length ? 'Watch the video. It will pause a few times so you can answer a quick question!' : 'Watch the video, then try the other learning modules!'}</p>
+                <div class="relative bg-black rounded-2xl overflow-hidden" style="aspect-ratio:16/9;">
+                    <div id="yt-player-el" class="w-full h-full"></div>
+                    <div id="checkpoint-overlay" class="absolute inset-0 bg-blue-900/95 flex items-center justify-center p-6" style="display:none;"></div>
+                </div>
+                <p id="video-msg" class="text-sm text-gray-500 mt-3 text-center min-h-[1.25rem]">Loading video player…</p>
+                <p class="text-center mt-1"><a href="${watchUrl}" target="_blank" rel="noopener" class="text-sm text-blue-600 underline">If the video does not play here, tap to open it in YouTube ↗</a></p>`;
+
+            const showFallback = (why) => {
+                const msg = document.getElementById('video-msg');
+                if (msg) msg.innerHTML = `⚠️ ${why} <a href="${watchUrl}" target="_blank" rel="noopener" class="text-blue-600 underline font-semibold">Open the video in YouTube ↗</a>`;
+            };
+            // If the player hasn't started after 10 seconds, offer YouTube directly
+            ytFallbackTimer = setTimeout(() => { if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') showFallback('The video is taking long to load.'); }, 10000);
+
+            const wanted = currentVideo.id;
+            loadYouTubeApi().then(() => {
+                if (!currentVideo || currentVideo.id !== wanted || !document.getElementById('yt-player-el')) return;   // student moved on
+                ytPlayer = new YT.Player('yt-player-el', {
+                    videoId: wanted,
+                    playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+                    events: {
+                        onReady: () => { if (ytFallbackTimer) clearTimeout(ytFallbackTimer); const m = document.getElementById('video-msg'); if (m) m.textContent = '▶️ Press play to start the lesson!'; },
+                        onStateChange: onYtStateChange,
+                        onError: () => showFallback('This video cannot play inside the lesson.')
+                    }
+                });
+            }).catch(() => showFallback('The video player could not load.'));
+        }
+
+        const SUBTITLES = {"K1-Lesson04-Shapes-Numbers":[[0.44,3.92,"Lesson four. Shapes and Numbers!"],[4.88,11.86,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.81,14.47,"Coco, what do we learn today?"],[14.52,18.32,"Today we learn: Shapes and Numbers! Let's go!"],[19.91,23.47,"Circle! Say it with me. Circle!"],[27.48,30.95,"Square! Say it with me. Square!"],[34.97,38.41,"Triangle! Say it with me. Triangle!"],[42.4,45.77,"Star! Say it with me. Star!"],[49.82,53.81,"Rectangle! Say it with me. Rectangle!"],[57.79,61.19,"Heart! Say it with me. Heart!"],[65.21,68.68,"Oval! Say it with me. Oval!"],[72.66,76.04,"Diamond! Say it with me. Diamond!"],[80.04,86.63,"Listen. How many stars? One, two, three."],[86.68,91.81,"Say it with me. How many stars? One, two, three."],[96.71,103.53,"Count the shiny stars in the night sky: one, two, three. A kite is shaped like a diamond."],[103.58,105.09,"I like this story!"],[105.8,110.18,"What's this?"],[110.23,111.75,"It's a triangle!"],[112.67,117.3,"What's this?"],[117.34,118.86,"It's a heart!"],[119.64,128.25,"This is G. G is for grape. G is for goat. This is H. H is for hat. H is for house."],[132.27,139.07,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[139.12,140.75,"Bye-bye, friends!"]],"K1-Lesson09-Numbers":[[0.43,3.79,"Lesson nine. Numbers 1-8!"],[4.71,11.98,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.97,16.13,"Coco, what do we learn today?"],[16.18,19.6,"Today we learn: Numbers 1-8! Let's go!"],[20.41,24.1,"One! Say it with me. One!"],[27.98,31.16,"Two! Say it with me. Two!"],[35.14,38.49,"Three! Say it with me. Three!"],[42.53,45.88,"Four! Say it with me. Four!"],[49.86,53.49,"Five! Say it with me. Five!"],[57.49,60.53,"Six! Say it with me. Six!"],[64.52,67.92,"Seven! Say it with me. Seven!"],[71.97,75.32,"Eight! Say it with me. Eight!"],[79.35,85.22,"Listen. One book, two books, three books."],[85.27,89.62,"Say it with me. One book, two books, three books."],[94.52,101.4,"Let's count our fingers: one, two, three, four, five, six, seven, eight!"],[101.45,102.92,"I like this story!"],[103.61,108.2,"What number is this?"],[108.25,109.4,"Three!"],[110.23,114.8,"What number is this?"],[114.85,116.0,"Six!"],[116.89,126.17,"This is Q. Q is for queen. Q is for question. This is R. R is for rabbit. R is for rain."],[130.18,137.54,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[137.59,139.17,"Bye-bye, friends!"]],"K1-Lesson07-Food":[[0.44,2.83,"Lesson seven. Food!"],[3.75,10.61,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[11.63,14.45,"Coco, what do we learn today?"],[14.5,17.07,"Today we learn: Food! Let's go!"],[17.82,21.37,"Apple! Say it with me. Apple!"],[25.36,28.92,"Banana! Say it with me. Banana!"],[32.92,36.24,"Milk! Say it with me. Milk!"],[40.23,43.63,"Bread! Say it with me. Bread!"],[47.61,50.95,"Egg! Say it with me. Egg!"],[54.97,58.8,"Rice! Say it with me. Rice!"],[62.77,66.23,"Cheese! Say it with me. Cheese!"],[70.23,73.71,"Juice! Say it with me. Juice!"],[77.78,83.82,"Listen. I like milk. I don't like coffee."],[83.87,88.52,"Say it with me. I like milk. I don't like coffee."],[93.58,99.79,"I eat a sweet banana and drink warm milk for breakfast. I also like rice with cheese."],[99.84,101.28,"I like this story!"],[102.08,106.31,"What's this?"],[106.36,107.56,"It's milk!"],[108.65,113.0,"What's this?"],[113.05,114.35,"It's rice!"],[115.44,124.32,"This is M. M is for moon. M is for monkey. This is N. N is for nose. N is for nest."],[128.43,135.61,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[135.66,137.35,"Bye-bye, friends!"]],"K1-Lesson02-School-Things":[[0.63,3.61,"Lesson two. School Things!"],[4.34,11.36,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.35,14.14,"Coco, what do we learn today?"],[14.19,17.84,"Today we learn: School Things! Let's go!"],[19.47,22.64,"Book! Say it with me. Book!"],[26.63,29.84,"Pen! Say it with me. Pen!"],[33.89,37.69,"Eraser! Say it with me. Eraser!"],[41.67,45.36,"Crayon! Say it with me. Crayon!"],[49.36,52.76,"Ruler! Say it with me. Ruler!"],[56.76,60.31,"Bag! Say it with me. Bag!"],[64.28,68.77,"Pencil case! Say it with me. Pencil case!"],[72.73,76.4,"Scissors! Say it with me. Scissors!"],[80.46,86.63,"Listen. This is a pencil. This is an eraser."],[86.68,91.31,"Say it with me. This is a pencil. This is an eraser."],[96.26,102.06,"I have a yellow pencil and a pink eraser in my bag. My ruler is in my pencil case."],[102.11,103.49,"I like this story!"],[104.2,108.55,"What's this?"],[108.6,110.06,"It's an eraser!"],[111.03,115.31,"What's this?"],[115.36,116.69,"It's a bag!"],[117.81,126.5,"This is C. C is for cat. C is for car. This is D. D is for dog. D is for duck."],[130.5,137.62,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[137.67,139.23,"Bye-bye, friends!"]],"K1-Lesson12-Kitchen":[[0.62,3.64,"Lesson twelve. In the Kitchen!"],[4.4,11.7,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.67,14.23,"Coco, what do we learn today?"],[14.28,17.59,"Today we learn: In the Kitchen! Let's go!"],[19.13,22.17,"Plate! Say it with me. Plate!"],[26.21,29.54,"Spoon! Say it with me. Spoon!"],[33.54,36.87,"Fork! Say it with me. Fork!"],[40.84,43.89,"Cup! Say it with me. Cup!"],[47.94,51.27,"Pot! Say it with me. Pot!"],[55.22,58.6,"Pan! Say it with me. Pan!"],[62.59,66.01,"Table! Say it with me. Table!"],[70.01,73.33,"Chair! Say it with me. Chair!"],[77.36,83.41,"Listen. There is a plate. There are two cups."],[83.46,87.83,"Say it with me. There is a plate. There are two cups."],[92.67,98.23,"Mummy cooks rice in the pot. We put the plates, spoons, and forks on the table."],[98.28,99.63,"I like this story!"],[100.35,104.75,"What's this?"],[104.8,106.13,"It's a fork!"],[107.04,111.55,"What's this?"],[111.6,112.97,"It's a pan!"],[113.95,118.66,"This is V. V is for van. V is for violin."],[122.67,129.84,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[129.89,131.6,"Bye-bye, friends!"]],"K1-Lesson15-Jobs":[[0.44,3.32,"Lesson fifteen. Jobs!"],[4.25,11.74,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.73,15.53,"Coco, what do we learn today?"],[15.58,18.3,"Today we learn: Jobs! Let's go!"],[19.08,22.95,"Doctor! Say it with me. Doctor!"],[26.86,30.7,"Teacher! Say it with me. Teacher!"],[34.71,38.18,"Farmer! Say it with me. Farmer!"],[42.18,45.54,"Police! Say it with me. Police!"],[49.59,53.25,"Nurse! Say it with me. Nurse!"],[57.19,60.44,"Chef! Say it with me. Chef!"],[64.5,68.11,"Driver! Say it with me. Driver!"],[72.04,75.34,"Pilot! Say it with me. Pilot!"],[79.41,85.28,"Listen. He is a doctor. She is a teacher."],[85.33,89.68,"Say it with me. He is a doctor. She is a teacher."],[94.62,99.46,"The doctor and nurse help sick people. The farmer grows rice for us to eat."],[99.51,100.76,"I like this story!"],[101.77,106.02,"Who is this?"],[106.07,107.48,"He is a farmer!"],[108.34,112.62,"Who is this?"],[112.67,114.02,"He is a chef!"],[114.96,119.81,"This is Y. Y is for yo-yo. Y is for yellow."],[123.85,131.1,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[131.15,132.78,"Bye-bye, friends!"]],"K1-Lesson11-My-Body":[[0.44,3.08,"Lesson eleven. My Body!"],[4.01,11.06,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.05,13.95,"Coco, what do we learn today?"],[14.0,17.14,"Today we learn: My Body! Let's go!"],[18.59,21.93,"Head! Say it with me. Head!"],[25.86,29.53,"Shoulders! Say it with me. Shoulders!"],[33.59,37.24,"Knees! Say it with me. Knees!"],[41.45,45.54,"Toes! Say it with me. Toes!"],[49.52,53.45,"Hands! Say it with me. Hands!"],[57.21,60.38,"Feet! Say it with me. Feet!"],[64.44,68.31,"Eyes! Say it with me. Eyes!"],[72.31,76.15,"Ears! Say it with me. Ears!"],[80.13,86.28,"Listen. Touch your head. Touch your toes."],[86.33,90.82,"Say it with me. Touch your head. Touch your toes."],[95.59,101.89,"Touch your head, shoulders, knees, and toes! Now clap your hands and stomp your feet."],[101.94,103.27,"I like this story!"],[103.99,108.34,"Touch your knees!"],[108.4,110.53,"Knees! Well done!"],[111.83,116.16,"Touch your feet!"],[116.21,118.28,"Feet! Well done!"],[119.58,124.05,"This is U. U is for umbrella. U is for up."],[128.06,135.24,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[135.29,136.88,"Bye-bye, friends!"]],"K1-Lesson13-Transport":[[0.44,3.49,"Lesson thirteen. Transport!"],[4.43,11.37,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.34,15.44,"Coco, what do we learn today?"],[15.49,18.57,"Today we learn: Transport! Let's go!"],[19.28,22.81,"Car! Say it with me. Car!"],[26.85,30.28,"Bus! Say it with me. Bus!"],[34.3,37.37,"Bike! Say it with me. Bike!"],[41.29,44.74,"Train! Say it with me. Train!"],[48.82,51.97,"Boat! Say it with me. Boat!"],[55.89,59.69,"Plane! Say it with me. Plane!"],[63.75,67.23,"Road! Say it with me. Road!"],[71.23,74.79,"Fast! Say it with me. Fast!"],[78.79,85.38,"Listen. I go to school by bus. I go by bike."],[85.43,90.37,"Say it with me. I go to school by bus. I go by bike."],[95.16,100.42,"The yellow bus drives fast on the road. A plane flies high above the train."],[100.47,101.81,"I like this story!"],[102.55,106.84,"What's this?"],[106.89,108.12,"It's a bike!"],[109.11,113.53,"What's this?"],[113.58,115.01,"It's a plane!"],[115.94,121.29,"This is W. W is for watermelon. W is for whale."],[125.28,132.29,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[132.34,134.02,"Bye-bye, friends!"]],"K1-Lesson08-Clothes":[[0.41,2.83,"Lesson eight. Clothes!"],[3.78,10.78,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[11.78,13.65,"Coco, what do we learn today?"],[13.7,16.71,"Today we learn: Clothes! Let's go!"],[18.03,21.36,"Hat! Say it with me. Hat!"],[25.36,28.51,"Shirt! Say it with me. Shirt!"],[32.58,36.3,"Pants! Say it with me. Pants!"],[40.21,43.65,"Shoes! Say it with me. Shoes!"],[47.65,51.21,"Socks! Say it with me. Socks!"],[55.21,58.63,"Jacket! Say it with me. Jacket!"],[62.64,65.83,"Skirt! Say it with me. Skirt!"],[69.86,73.36,"Gloves! Say it with me. Gloves!"],[77.39,82.56,"Listen. I am wearing a hat and shoes."],[82.61,86.4,"Say it with me. I am wearing a hat and shoes."],[91.46,96.69,"Put on your red hat when you go out in the sun. Wear a jacket when it is cold."],[96.74,98.05,"I like this story!"],[99.12,103.7,"What are these?"],[103.75,105.27,"They're pants!"],[106.15,110.32,"What's this?"],[110.37,111.63,"It's a jacket!"],[112.56,121.82,"This is O. O is for octopus. O is for orange. This is P. P is for pig. P is for pen."],[125.84,132.81,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[132.86,134.53,"Bye-bye, friends!"]],"K1-Lesson16-Nature":[[0.44,3.29,"Lesson sixteen. Nature!"],[4.2,11.1,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.08,13.75,"Coco, what do we learn today?"],[13.8,16.84,"Today we learn: Nature! Let's go!"],[18.46,21.64,"Tree! Say it with me. Tree!"],[25.67,29.39,"Flower! Say it with me. Flower!"],[33.38,36.99,"Grass! Say it with me. Grass!"],[40.98,44.39,"Sky! Say it with me. Sky!"],[48.4,51.76,"Sun! Say it with me. Sun!"],[55.82,59.59,"Moon! Say it with me. Moon!"],[63.59,67.24,"River! Say it with me. River!"],[71.25,74.86,"Mountain! Say it with me. Mountain!"],[78.84,83.61,"Listen. The tree is in the garden."],[83.66,86.81,"Say it with me. The tree is in the garden."],[91.74,97.22,"The tall tree and pretty flowers grow near the river. The mountain touches the sky."],[97.27,98.57,"I like this story!"],[99.55,103.84,"What's this?"],[103.9,105.28,"It's grass!"],[106.22,110.56,"What's this?"],[110.62,111.91,"It's the moon!"],[112.79,117.08,"This is Z. Z is for zebra. Z is for zero."],[121.07,128.59,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[128.65,130.17,"See you in K two!"]],"K1-Lesson05-Toys-Games":[[0.46,3.71,"Lesson five. Toys and Games!"],[4.61,11.81,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.78,14.64,"Coco, what do we learn today?"],[14.69,18.51,"Today we learn: Toys and Games! Let's go!"],[20.17,23.85,"Robot! Say it with me. Robot!"],[27.83,31.4,"Blocks! Say it with me. Blocks!"],[35.35,38.65,"Puzzle! Say it with me. Puzzle!"],[42.69,46.36,"Balloon! Say it with me. Balloon!"],[50.33,53.53,"Kite! Say it with me. Kite!"],[57.52,60.72,"Top! Say it with me. Top!"],[64.78,68.4,"Yo-yo! Say it with me. Yo-yo!"],[72.4,76.05,"Marble! Say it with me. Marble!"],[80.03,85.91,"Listen. I have a robot. I have a puzzle."],[85.96,90.34,"Say it with me. I have a robot. I have a puzzle."],[95.33,100.92,"We build a tall tower using colorful wooden blocks. Then we fly a kite outside."],[100.97,102.36,"I like this story!"],[103.15,107.66,"What's this?"],[107.72,109.15,"It's a puzzle!"],[109.96,114.32,"What's this?"],[114.37,115.59,"It's a top!"],[116.51,125.98,"This is I. I is for insect. I is for iguana. This is J. J is for juice. J is for jellyfish."],[130.0,137.45,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[137.5,139.03,"Bye-bye, friends!"]],"K1-Lesson03-Family-Friends":[[0.44,3.99,"Lesson three. My Family and Friends!"],[4.94,12.24,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[13.19,14.87,"Coco, what do we learn today?"],[14.92,18.73,"Today we learn: My Family and Friends! Let's go!"],[20.27,23.62,"Mother! Say it with me. Mother!"],[27.57,30.97,"Father! Say it with me. Father!"],[35.03,38.76,"Grandma! Say it with me. Grandma!"],[42.73,46.71,"Grandpa! Say it with me. Grandpa!"],[50.75,54.43,"Uncle! Say it with me. Uncle!"],[58.41,61.84,"Aunt! Say it with me. Aunt!"],[65.8,69.13,"Cousin! Say it with me. Cousin!"],[73.12,76.34,"Friend! Say it with me. Friend!"],[80.39,86.36,"Listen. This is my uncle. This is my aunt."],[86.41,90.62,"Say it with me. This is my uncle. This is my aunt."],[95.37,101.61,"Grandma tells wonderful stories every evening. My uncle and aunt visit us too."],[101.66,103.07,"I like this story!"],[103.78,108.08,"What's this?"],[108.13,109.58,"It's a grandma!"],[110.56,114.94,"What's this?"],[114.99,116.37,"It's an aunt!"],[117.32,126.23,"This is E. E is for egg. E is for elephant. This is F. F is for fish. F is for frog."],[130.22,137.28,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[137.32,139.03,"Bye-bye, friends!"]],"K1-Lesson06-Pets":[[0.44,2.97,"Lesson six. Pets!"],[3.89,11.07,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.05,13.76,"Coco, what do we learn today?"],[13.81,16.71,"Today we learn: Pets! Let's go!"],[18.37,21.8,"Rabbit! Say it with me. Rabbit!"],[25.75,29.43,"Hamster! Say it with me. Hamster!"],[33.41,36.61,"Turtle! Say it with me. Turtle!"],[40.6,43.85,"Puppy! Say it with me. Puppy!"],[47.87,51.31,"Kitten! Say it with me. Kitten!"],[55.31,58.68,"Chick! Say it with me. Chick!"],[62.69,66.64,"Goldfish! Say it with me. Goldfish!"],[70.69,74.22,"Parrot! Say it with me. Parrot!"],[78.23,84.85,"Listen. It has long ears. It has a short tail."],[84.9,90.08,"Say it with me. It has long ears. It has a short tail."],[95.06,101.11,"The fluffy puppy wags its tail when it is happy. My kitten likes to chase the goldfish bowl."],[101.16,102.47,"I like this story!"],[103.26,107.68,"What's this?"],[107.73,109.13,"It's a turtle!"],[109.92,114.2,"What's this?"],[114.25,115.52,"It's a chick!"],[116.46,125.45,"This is K. K is for kite. K is for key. This is L. L is for lion. L is for leaf."],[129.46,136.71,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[136.76,138.38,"Bye-bye, friends!"]],"K1-Lesson10-Days":[[0.49,3.57,"Lesson ten. Days of the Week!"],[4.48,11.85,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[12.82,14.46,"Coco, what do we learn today?"],[14.51,17.91,"Today we learn: Days of the Week! Let's go!"],[19.38,23.05,"Monday! Say it with me. Monday!"],[27.0,30.66,"Tuesday! Say it with me. Tuesday!"],[34.89,39.02,"Wednesday! Say it with me. Wednesday!"],[42.82,46.76,"Thursday! Say it with me. Thursday!"],[50.73,54.36,"Friday! Say it with me. Friday!"],[58.35,61.94,"Saturday! Say it with me. Saturday!"],[65.94,69.73,"Sunday! Say it with me. Sunday!"],[73.74,77.28,"Today! Say it with me. Today!"],[81.34,87.96,"Listen. Today is Monday. Tomorrow is Tuesday."],[88.01,92.93,"Say it with me. Today is Monday. Tomorrow is Tuesday."],[97.67,103.61,"We go to school on Monday. On Saturday and Sunday, we rest and play at home."],[103.66,105.07,"I like this story!"],[105.77,110.11,"What day is it?"],[110.16,111.5,"It's Wednesday!"],[112.51,116.85,"What day is it?"],[116.9,118.17,"It's Saturday!"],[119.21,128.16,"This is S. S is for sun. S is for snake. This is T. T is for tree. T is for tiger."],[132.17,139.56,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[139.61,141.2,"Bye-bye, friends!"]],"K1-Lesson14-Sports":[[0.44,3.04,"Lesson fourteen. Sports!"],[4.02,11.07,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[11.98,13.62,"Coco, what do we learn today?"],[13.67,16.67,"Today we learn: Sports! Let's go!"],[18.27,22.17,"Football! Say it with me. Football!"],[26.24,30.5,"Basketball! Say it with me. Basketball!"],[34.46,37.79,"Swim! Say it with me. Swim!"],[41.88,45.61,"Run! Say it with me. Run!"],[49.53,52.81,"Jump! Say it with me. Jump!"],[56.86,60.3,"Ball! Say it with me. Ball!"],[64.24,67.75,"Team! Say it with me. Team!"],[71.82,75.25,"Win! Say it with me. Win!"],[79.27,85.68,"Listen. I can play football. I can swim."],[85.73,90.58,"Say it with me. I can play football. I can swim."],[95.43,101.29,"My team likes to play football and basketball. We run, jump, and try to win."],[101.34,102.73,"I like this story!"],[103.49,107.97,"What can you do?"],[108.02,109.32,"I can swim!"],[110.49,114.83,"What's this?"],[114.88,116.12,"It's a ball!"],[117.06,121.79,"X. Listen for X at the end: fox, box!"],[125.78,132.96,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[133.01,134.7,"Bye-bye, friends!"]],"K1-Lesson01-Hello":[[0.43,2.85,"Lesson one. Hello!!"],[3.78,10.83,"Hello, hello! Hello, hello! Wave your hand, and say hello! Hello!"],[11.81,13.57,"Coco, what do we learn today?"],[13.62,17.0,"Today we learn: Hello!! Let's go!"],[18.5,21.95,"Hello! Say it with me. Hello!"],[25.92,29.37,"Hi! Say it with me. Hi!"],[33.36,36.71,"Teacher! Say it with me. Teacher!"],[40.72,43.93,"Friend! Say it with me. Friend!"],[47.95,51.72,"Good morning! Say it with me. Good morning!"],[55.74,59.21,"Name! Say it with me. Name!"],[63.15,66.53,"Class! Say it with me. Class!"],[70.56,73.89,"School! Say it with me. School!"],[77.93,84.26,"Listen. My name is Anna. What is your name?"],[84.31,89.03,"Say it with me. My name is Anna. What is your name?"],[93.84,101.02,"Hello! My name is Anna. This is my new school. Good morning, teacher and friends!"],[101.07,102.58,"I like this story!"],[103.32,107.7,"What's this?"],[107.75,109.25,"It's a teacher!"],[110.15,114.56,"What's this?"],[114.61,115.91,"It's a name!"],[116.83,125.33,"This is A. A is for apple. A is for ant. This is B. B is for ball. B is for bear."],[129.31,136.39,"Bye-bye, bye-bye! See you soon! Wave your hand. Bye-bye, bye-bye!"],[136.44,138.12,"Bye-bye, friends!"]]};
+        // English subtitles: added to the player with code, so no subtitle files are needed online.
+        let subsOn = true;
+        function addSubtitles(el) {
+            const cues = SUBTITLES[(el.getAttribute('src') || '').split('/').pop().split('?')[0].replace('.mp4', '')]; const btn = document.getElementById('subs-btn');
+            if (!cues || !el.addTextTrack || typeof VTTCue === 'undefined') { if (btn) btn.style.display = 'none'; return; }
+            const tr = el.addTextTrack('subtitles', 'English', 'en');
+            cues.forEach(c => { try { const q = new VTTCue(c[0], c[1], c[2]); q.line = -2; tr.addCue(q); } catch (e) {} });
+            const apply = () => { tr.mode = subsOn ? 'showing' : 'hidden'; if (btn) btn.textContent = subsOn ? '💬 Subtitles: ON' : '💬 Subtitles: OFF'; };
+            if (btn) btn.onclick = () => { subsOn = !subsOn; apply(); };
+            apply();
+        }
+        function renderMp4Lesson(contentDiv, unitData) {
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">📹 Video Lesson — Unit ${state.unit}: ${unitData.title}</h2>
+                <p class="text-gray-600 mb-4">${currentVideo.questions.length ? 'Watch the video. It will pause a few times so you can answer a quick question!' : 'Watch the video with Teacher Coco, then try the other learning modules!'}</p>
+                <div class="relative bg-black rounded-2xl overflow-hidden" style="aspect-ratio:16/9;">
+                    <video id="mp4-player" src="${currentVideo.mp4}" controls playsinline preload="metadata" class="w-full h-full" style="object-fit:contain;"></video>
+                    <div id="checkpoint-overlay" class="absolute inset-0 bg-blue-900/95 flex items-center justify-center p-6" style="display:none;"></div>
+                </div>
+                <p id="video-msg" class="text-sm text-gray-500 mt-3 text-center min-h-[1.25rem]">▶️ Press play to start the lesson!</p>
+                <div class="text-center mt-2 flex justify-center gap-3 flex-wrap"><button id="subs-btn" class="bg-white border border-indigo-300 text-indigo-700 font-bold px-4 py-2 rounded-full shadow cursor-pointer">💬 Subtitles: ON</button><button onclick="nextLesson()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 rounded-full shadow cursor-pointer">Next Lesson ▶️</button></div>`;
+            const el = document.getElementById('mp4-player');
+            addSubtitles(el);
+            { const a = document.getElementById('footer-next-module'), b = document.getElementById('footer-next-lesson'); if (a) a.style.display = ''; if (b) b.style.display = 'none'; }
+            ytPlayer = {
+                getCurrentTime: () => el.currentTime,
+                pauseVideo: () => el.pause(),
+                playVideo: () => { const p = el.play(); if (p && p.catch) p.catch(() => {}); },
+                destroy: () => { try { el.pause(); el.removeAttribute('src'); el.load(); } catch (e) {} }
+            };
+            el.addEventListener('play', () => { const m = document.getElementById('video-msg'); if (m) m.textContent = ''; });
+            el.addEventListener('timeupdate', () => { if (currentVideo && currentVideo.questions.length) checkVideoCheckpoints(); });
+            el.addEventListener('ended', () => {
+                const got = award(unitKey('video-' + currentVideo.id), 5);
+                const m = document.getElementById('video-msg');
+                if (m) m.textContent = '🎉 Great job watching the whole video!' + (got ? ' (+5 ⭐)' : '');
+            });
+            el.addEventListener('error', () => {
+                const m = document.getElementById('video-msg');
+                if (m) m.innerHTML = '⚠️ The video could not load. Check the internet, or <a href="' + currentVideo.mp4 + '" target="_blank" rel="noopener" class="text-blue-600 underline font-semibold">open it here ↗</a>';
+            });
+        }
+
+        function onYtStateChange(event) {
+            const msg = document.getElementById('video-msg');
+            if (event.data === YT.PlayerState.PLAYING) {
+                if (ytPollInterval) clearInterval(ytPollInterval);
+                if (currentVideo && currentVideo.questions.length) ytPollInterval = setInterval(checkVideoCheckpoints, 400);
+                if (msg) msg.textContent = '';
+            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                if (ytPollInterval) { clearInterval(ytPollInterval); ytPollInterval = null; }
+                if (event.data === YT.PlayerState.ENDED) {
+                    const got = award(unitKey('video-' + currentVideo.id), 5);
+                    if (msg) msg.textContent = '🎉 Great job watching the whole video!' + (got ? ' (+5 ⭐)' : '');
+                }
+            }
+        }
+
+        function checkVideoCheckpoints() {
+            if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function' || !currentVideo) return;
+            let t = 0;
+            try { t = ytPlayer.getCurrentTime(); } catch (e) { return; }
+            currentVideo.questions.forEach((cp, idx) => {
+                if (!ytAnsweredCheckpoints.has(idx) && t >= cp.time) {
+                    ytAnsweredCheckpoints.add(idx);
+                    showVideoCheckpoint(idx);
+                }
+            });
+        }
+
+        function showVideoCheckpoint(idx) {
+            const cp = currentVideo.questions[idx];
+            ytPlayer.pauseVideo();
+            if (ytPollInterval) { clearInterval(ytPollInterval); ytPollInterval = null; }
+            const overlay = document.getElementById('checkpoint-overlay');
+            overlay.style.display = 'flex';
+            overlay.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 max-w-md w-full text-center">
+                    <p class="text-sm font-bold text-blue-600 mb-2">🤔 Quick Question!</p>
+                    <p class="font-bold text-lg text-gray-800 mb-4">${cp.question}</p>
+                    <div class="flex flex-col gap-2" id="checkpoint-options">
+                        ${cp.options.map((opt, i) => `<button onclick="answerVideoCheckpoint(${idx}, ${i})" class="bg-blue-50 hover:bg-blue-100 text-blue-900 font-semibold p-3 rounded-xl cursor-pointer">${opt}</button>`).join('')}
+                    </div>
+                    <p id="checkpoint-feedback" class="mt-3 font-bold min-h-[1.5rem]"></p>
+                </div>`;
+        }
+
+        function answerVideoCheckpoint(idx, chosenIndex) {
+            const cp = currentVideo.questions[idx];
+            const feedback = document.getElementById('checkpoint-feedback');
+            const optionsDiv = document.getElementById('checkpoint-options');
+            optionsDiv.querySelectorAll('button').forEach(b => b.disabled = true);
+            if (chosenIndex === cp.correct) {
+                feedback.className = 'mt-3 font-bold min-h-[1.5rem] text-green-600';
+                feedback.textContent = award(unitKey('video-' + currentVideo.id + '-q' + idx), 2) ? '🎉 Correct! (+2 ⭐)' : '🎉 Correct!';
+            } else {
+                feedback.className = 'mt-3 font-bold min-h-[1.5rem] text-red-500';
+                feedback.textContent = `❌ Not quite — the answer was "${cp.options[cp.correct]}"`;
+            }
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'Next ▶️';
+            nextBtn.className = 'mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-full shadow cursor-pointer';
+            nextBtn.onclick = resumeVideoAfterCheckpoint;
+            feedback.insertAdjacentElement('afterend', nextBtn);
+        }
+
+        function resumeVideoAfterCheckpoint() {
+            document.getElementById('checkpoint-overlay').style.display = 'none';
+            if (ytPlayer) ytPlayer.playVideo();
+        }
+
+        // ===== 7. QUIZ (graded quiz per unit, pictures on every answer) =====
+        // Stars are given only for improving on your best score for this unit,
+        // and answer buttons lock after the first tap so quick double taps can't skip questions.
+        let quizState = { qIndex: 0, score: 0, order: [], currentOptions: [], currentAnswer: '', locked: false };
+        function renderQuiz(contentDiv, unitData) {
+            quizState = { qIndex: 0, score: 0, order: shuffle(unitData.vocab.map((_, i) => i)), currentOptions: [], currentAnswer: '', locked: false };
+            showQuizQuestion();
+        }
+        function showQuizQuestion() {
+            const contentDiv = document.getElementById('module-content');
+            const unitData = realCurriculum[state.level][state.unit];
+            quizState.locked = false;
+            if (quizState.qIndex >= quizState.order.length) {
+                const total = quizState.order.length;
+                const pct = Math.round((quizState.score / total) * 100);
+                const bestKey = state.level + '|' + unitKey('quiz');
+                const best = progress.bestQuiz[bestKey] || 0;
+                const earned = Math.max(0, quizState.score - best) * 2;
+                if (quizState.score > best) progress.bestQuiz[bestKey] = quizState.score;
+                if (earned > 0) addStars(earned); else saveProgress();
+                if (pct === 100) triggerConfetti();
+                contentDiv.innerHTML = `
+                    <h2 class="text-xl font-bold text-blue-800 mb-2">🧩 Quiz Complete!</h2>
+                    <div class="bg-purple-50 p-8 rounded-2xl border border-purple-200 text-center">
+                        <div class="text-5xl mb-3">${pct === 100 ? '🏆' : pct >= 50 ? '🎉' : '💪'}</div>
+                        <p class="font-bold text-purple-900 text-2xl mb-2">${quizState.score} / ${total} Correct</p>
+                        <p class="text-gray-600 mb-4">${earned > 0 ? `You earned ${earned} ⭐` : (best >= total ? 'Perfect score already! 🌟' : `Your best is ${Math.max(best, quizState.score)} / ${total} — beat it to earn more ⭐`)}</p>
+                        <button onclick="renderQuiz(document.getElementById('module-content'), realCurriculum[state.level][state.unit])" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-5 py-2 rounded-xl shadow cursor-pointer">🔁 Try Again</button>
+                    </div>`;
+                return;
+            }
+            const wordIdx = quizState.order[quizState.qIndex];
+            const word = unitData.vocab[wordIdx];
+            const distractors = pickDistractors(word, unitData);
+            const options = shuffle([word, ...distractors]);
+            quizState.currentOptions = options;
+            quizState.currentAnswer = word;
+            contentDiv.innerHTML = `
+                <h2 class="text-xl font-bold text-blue-800 mb-2">🧩 Quiz & Sticker Rewards</h2>
+                <p class="text-sm text-gray-500 mb-3">Question ${quizState.qIndex + 1} of ${quizState.order.length}</p>
+                <div class="bg-purple-50 p-6 rounded-2xl border border-purple-200">
+                    <p class="font-bold text-purple-900 mb-2">🔊 Listen and choose the picture you heard:</p>
+                    <button onclick="speak(quizState.currentAnswer)" class="bg-purple-500 hover:bg-purple-600 text-white font-bold px-5 py-2 rounded-full shadow mb-4 cursor-pointer">🔊 Play Word</button>
+                    <div class="grid grid-cols-2 gap-3" id="quiz-options">
+                        ${options.map(o => `<button onclick="answerQuiz('${jsArg(o)}')" class="bg-white p-3 rounded-xl shadow hover:bg-purple-100 font-medium cursor-pointer flex flex-col items-center gap-1"><span class="text-4xl">${emojiFor(o, unitData)}</span><span>${o}</span></button>`).join('')}
+                    </div>
+                    <p id="quiz-ans" class="mt-4 font-bold text-lg min-h-[1.5rem]"></p>
+                </div>`;
+            speak(word);
+        }
+        function answerQuiz(chosen) {
+            if (quizState.locked) return;
+            quizState.locked = true;
+            document.querySelectorAll('#quiz-options button').forEach(b => b.disabled = true);
+            let el = document.getElementById('quiz-ans');
+            const correct = chosen === quizState.currentAnswer;
+            if (correct) {
+                el.innerHTML = "🎉 Correct! Amazing job!";
+                el.className = "mt-4 font-bold text-lg text-green-600";
+                quizState.score++;
+            } else {
+                el.innerHTML = `❌ Not quite — it was "${quizState.currentAnswer}" ${emojiFor(quizState.currentAnswer)}`;
+                el.className = "mt-4 font-bold text-lg text-red-500";
+            }
+            quizState.qIndex++;
+            (function (t) { setTimeout(function () { if (state.tab === t) showQuizQuestion(); }, 1100); })(state.tab);  // only if the student is still on this module
+        }
+
+        // ===== HUB EMBED VARIANT: hard-locked to K1 =====
+        // One copy of this file exists per level (K0/K1/K2/K3); only the lockLevel('K0') line differs.
+        function lockLevel(requested) {
+            state.level = requested;
+            document.getElementById('current-level-display').textContent = requested;
+            document.getElementById('level-picker-wrap').classList.add('hidden');
+            const banner = document.getElementById('locked-level-banner');
+            banner.classList.remove('hidden');
+            document.getElementById('locked-level-text').textContent = requested;
+
+            const phonicsBtn = document.getElementById('phonics-tab-btn');
+            phonicsBtn.style.display = PHONICS_LEVELS.includes(requested) ? '' : 'none';
+        }
+
+        lockLevel('K1');
+        loadProgress();
+        populateUnitSelect();
+        updateVideoTabBadge();
+        // Open on the video only when there is one; otherwise start with Listening
+        state.tab = videoFor(state.level, state.unit) ? 'video' : 'listening';
+        highlightActiveTab();
+        renderContent();
+        // Show the "📚 Modules" button on phones once the module list has scrolled out of view
+        if ('IntersectionObserver' in window) {
+            new IntersectionObserver(entries => {
+                const jump = document.getElementById('modules-jump');
+                if (jump) jump.style.display = entries[0].isIntersecting ? 'none' : '';
+            }).observe(document.querySelector('.tab-btn[data-tab="grammar"]'));
+        }
+    </script>
+</body>
+</html>
